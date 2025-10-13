@@ -1,0 +1,49 @@
+Config.py
+Store file locations, constants, and settings (window size, asset paths).
+display.py
+Handle pygame display setup, window creation, and drawing functions.
+level.py
+Manage level data, skateboard angles, and environment (asphalt, cracks, patches).
+main.py
+Entry point; initialize app, run main loop, handle quitting.
+controls.py
+Process user input (keyboard/mouse), update skateboard angle or state.
+ui.py
+Draw UI elements (menus, progress bars, hand indicators) using only horizontal ASCII lines.
+
+
+
+Config.py
+get_colors()
+get_settings()
+load_assets()
+
+display.py
+init_display()
+clear_screen()
+draw_sprite()
+update_display()
+
+level.py
+load_level()
+get_random_angle()
+draw_environment()
+reset_level()
+
+main.py
+main()
+run_game_loop()
+handle_events()
+quit_game()
+
+controls.py
+process_input()
+get_key_state()
+update_angle()
+handle_mouse()
+
+ui.py
+draw_menu()
+draw_progress_bar()
+draw_hand_indicators()
+draw_ascii_box()

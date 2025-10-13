@@ -1,0 +1,35 @@
+Nollie Kickflip Animation Metadata
+========================================
+
+Frames: 25
+Frames per row: 8
+Rows: 4
+Sprite size: 128x128
+
+Frame sequence (shuv_flip):
+--------------------
+Frame  0: 0_0
+Frame  1: 0_345
+Frame  2: 0_330
+Frame  3: 0_315
+Frame  4: 0_300
+Frame  5: 0_285
+Frame  6: 0_270
+Frame  7: 0_255
+Frame  8: 0_240
+Frame  9: 0_225
+Frame 10: 0_210
+Frame 11: 0_195
+Frame 12: 0_180
+Frame 13: 0_165
+Frame 14: 0_150
+Frame 15: 0_135
+Frame 16: 0_120
+Frame 17: 0_105
+Frame 18: 0_90
+Frame 19: 0_75
+Frame 20: 0_60
+Frame 21: 0_45
+Frame 22: 0_30
+Frame 23: 0_15
+Frame 24: 0_0

@@ -1,0 +1,169 @@
+I'll read the `app.py` file to understand its current structure and then help you split it into the 6 files you've created.
+
+
+[1 tool called]
+
+The file is quite large. Let me read it in sections to understand its structure:
+
+
+[2 tools called]
+
+Let me get more information about the class structure and methods:
+
+
+[2 tools called]
+
+Now let me examine key sections to understand the functionality better:
+
+
+[2 tools called]
+
+Let me also check the key mappings and some core functionality:
+
+
+[2 tools called]
+
+Based on my analysis of the `app.py` file, here's how you can split the functionality into your 6 files:
+
+## **config.py** - Constants and Settings
+**Purpose**: Store all configuration values, constants, and settings
+
+**Functions/Content needed**:
+- Color scheme definitions (`self.colors`)
+- Font paths and sizes
+- Display settings (window size, scale factors)
+- Trick mappings (`trick_map`, `grind_trick_map`, `trick_points`)
+- Animation settings (frame rates, durations)
+- Sound settings
+- Game mechanics constants (speeds, timers, thresholds)
+- Key mappings (`_key_mappings`)
+
+**Key constants to extract**:
+```python
+# Display
+DISPLAY_WIDTH = 1200
+DISPLAY_HEIGHT = 675
+SCALE_FACTOR = 0.2
+
+# Colors
+COLORS = {
+    'primary': (52, 73, 94),
+    'background': (44, 62, 80),
+    # ... all color definitions
+}
+
+# Trick mappings
+TRICK_MAP = {
+    "BS-Shuv-It": ["down", "center"],
+    # ... all trick definitions
+}
+
+# Key mappings
+KEY_MAPPINGS = {
+    pygame.K_w: 'w', pygame.K_a: 'a',
+    # ... all key mappings
+}
+```
+
+## **display.py** - Rendering System
+**Purpose**: Handle all visual rendering and display operations
+
+**Functions needed**:
+- `render_board()` - Main rendering function
+- `_render_animation()` - Animation rendering
+- `_render_sprite_from_position()` - Sprite rendering
+- `_render_grind_image()` - Grind rendering
+- `_render_floor()` - Floor rendering
+- `_render_rails()` - Rail rendering
+- `_draw_hand_position_indicators()` - UI indicators
+- `_draw_angle_info()` - Angle display
+- `_draw_trick_feedback()` - Trick feedback
+- `_draw_landing_feedback()` - Landing feedback
+- `_draw_grind_feedback()` - Grind feedback
+- `_draw_catch_feedback()` - Catch feedback
+- `_draw_death_effect()` - Death effects
+- `_draw_scoring_display()` - Score display
+
+**Dependencies**: Needs access to config for colors, fonts, and display settings
+
+## **level.py** - Game Level and Object Management
+**Purpose**: Handle game objects, level mechanics, and world state
+
+**Functions needed**:
+- `_load_floor_texture()` - Floor loading
+- `_create_fallback_floor_texture()` - Fallback floor
+- `_load_rail_image()` - Rail loading
+- `_update_floor_offset()` - Floor scrolling
+- `_spawn_rail()` - Rail spawning
+- `_update_rails()` - Rail management
+- `_check_rail_collision()` - Collision detection
+- `_check_rail_end()` - Rail end detection
+- Rail and floor state management
+
+**Dependencies**: Needs config for rail settings, spawn intervals
+
+## **control.py** - Skateboard Control System
+**Purpose**: Handle skateboard movement, tricks, and physics
+
+**Functions needed**:
+- `_update_keyboard_controls()` - Input processing
+- `_handle_key_press()` - Key handling
+- `_get_hand_direction()` - Hand position calculation
+- `_check_trick_combination()` - Trick detection
+- `_update_trick_detection()` - Trick system updates
+- `do_trick()` - Execute tricks
+- `_setup_catch_system()` - Catch mechanics
+- `_check_catch_input()` - Catch input handling
+- `_trigger_death()` - Death system
+- `_update_airborne_state()` - Airborne physics
+- `_land_board()` - Landing mechanics
+- Trick chain management functions
+- Grind system functions (`_start_grind`, `_update_grinding_state`, etc.)
+
+**Dependencies**: Needs config for trick mappings, timing, and physics constants
+
+## **ui.py** - UI and Overlay System
+**Purpose**: Handle user interface, feedback, and visual overlays
+
+**Functions needed**:
+- `_start_ui_animation()` - Animation system
+- `_update_ui_animations()` - Animation updates
+- `_get_animated_value()` - Animation value calculation
+- `_stop_ui_animation()` - Animation control
+- `_load_arrow_icons()` - Icon loading
+- `_get_cached_surface()` - Surface caching
+- `_clear_surface_cache()` - Cache management
+- `_check_auto_cache_clear()` - Cache optimization
+- All drawing functions for UI elements
+- Sound loading and management (`_load_sounds`, `_play_catch_sound`, etc.)
+
+**Dependencies**: Needs config for UI settings, colors, fonts
+
+## **main.py** - Main Application Controller
+**Purpose**: Coordinate all systems and run the main game loop
+
+**Functions needed**:
+- `__init__()` - Initialize all systems
+- `run()` - Main game loop
+- `_handle_events()` - Event processing
+- `_update_game_state()` - Game state coordination
+- `_update_time()` - Time management
+- `main()` - Application entry point
+- Resource loading coordination
+- System initialization and cleanup
+
+**Dependencies**: Imports and coordinates all other modules
+
+## **Key Considerations**:
+
+1. **Shared State**: You'll need to pass game state between modules (current angle, trick state, score, etc.)
+
+2. **Resource Loading**: Consider creating a shared resource manager or loading resources in main.py and passing them down
+
+3. **Event System**: You might want to implement a simple event system for communication between modules
+
+4. **Import Structure**: Each module should import only what it needs from config.py and other modules
+
+5. **Memory Management**: The surface caching system should probably stay in display.py or ui.py
+
+This structure will make your code much more maintainable and easier to work with, following the single responsibility principle where each file has a clear, focused purpose.

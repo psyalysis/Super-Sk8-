@@ -1,0 +1,15 @@
+Nollie Animation Metadata
+========================================
+
+Frames: 5
+Frames per row: 5
+Rows: 1
+Sprite size: 128x128
+
+Frame sequence (shuv_flip):
+--------------------
+Frame  0: 0_0
+Frame  1: 345_0
+Frame  2: 330_0
+Frame  3: 345_0
+Frame  4: 0_0

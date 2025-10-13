@@ -1,0 +1,35 @@
+360 Inward Heel Animation Metadata
+========================================
+
+Frames: 25
+Frames per row: 8
+Rows: 4
+Sprite size: 128x128
+
+Frame sequence (shuv_flip):
+--------------------
+Frame  0: 0_0
+Frame  1: 15_15
+Frame  2: 30_30
+Frame  3: 45_45
+Frame  4: 60_60
+Frame  5: 75_75
+Frame  6: 90_90
+Frame  7: 105_105
+Frame  8: 120_120
+Frame  9: 135_135
+Frame 10: 150_150
+Frame 11: 165_165
+Frame 12: 180_180
+Frame 13: 195_195
+Frame 14: 210_210
+Frame 15: 225_225
+Frame 16: 240_240
+Frame 17: 255_255
+Frame 18: 270_270
+Frame 19: 285_285
+Frame 20: 300_300
+Frame 21: 315_315
+Frame 22: 330_330
+Frame 23: 345_345
+Frame 24: 0_0

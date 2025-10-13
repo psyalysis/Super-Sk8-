@@ -1,0 +1,23 @@
+Varial Heelflip Animation Metadata
+========================================
+
+Frames: 13
+Frames per row: 8
+Rows: 2
+Sprite size: 128x128
+
+Frame sequence (shuv_flip):
+--------------------
+Frame  0: 0_0
+Frame  1: 345_30
+Frame  2: 330_60
+Frame  3: 315_90
+Frame  4: 300_120
+Frame  5: 285_150
+Frame  6: 270_180
+Frame  7: 255_210
+Frame  8: 240_240
+Frame  9: 225_270
+Frame 10: 210_300
+Frame 11: 195_330
+Frame 12: 180_0

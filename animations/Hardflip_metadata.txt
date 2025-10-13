@@ -1,0 +1,23 @@
+Hardflip Animation Metadata
+========================================
+
+Frames: 13
+Frames per row: 8
+Rows: 2
+Sprite size: 128x128
+
+Frame sequence (shuv_flip):
+--------------------
+Frame  0: 0_0
+Frame  1: 345_330
+Frame  2: 330_300
+Frame  3: 315_270
+Frame  4: 300_240
+Frame  5: 285_210
+Frame  6: 270_180
+Frame  7: 255_150
+Frame  8: 240_120
+Frame  9: 225_90
+Frame 10: 210_60
+Frame 11: 195_30
+Frame 12: 180_0

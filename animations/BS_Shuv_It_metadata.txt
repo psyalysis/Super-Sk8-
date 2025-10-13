@@ -1,0 +1,35 @@
+BS-Shuv-It Animation Metadata
+========================================
+
+Frames: 25
+Frames per row: 8
+Rows: 4
+Sprite size: 128x128
+
+Frame sequence (shuv_flip):
+--------------------
+Frame  0: 0_0
+Frame  1: 15_0
+Frame  2: 30_0
+Frame  3: 45_0
+Frame  4: 60_0
+Frame  5: 75_0
+Frame  6: 90_0
+Frame  7: 105_0
+Frame  8: 120_0
+Frame  9: 135_0
+Frame 10: 150_0
+Frame 11: 165_0
+Frame 12: 180_0
+Frame 13: 195_0
+Frame 14: 210_0
+Frame 15: 225_0
+Frame 16: 240_0
+Frame 17: 255_0
+Frame 18: 270_0
+Frame 19: 285_0
+Frame 20: 300_0
+Frame 21: 315_0
+Frame 22: 330_0
+Frame 23: 345_0
+Frame 24: 0_0
