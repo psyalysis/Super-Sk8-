@@ -14,6 +14,8 @@ class Main:
     def __init__(self):
         self.running = True
         
+        self.game_state = "menu"
+        
         pygame.init()
         self.screen = pygame.display.set_mode((config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
         pygame.display.set_caption("Super-Sk8!")
@@ -26,7 +28,7 @@ class Main:
         self.debug = debug.Debug(self.main)
         self.level = level.Level(self.display, self.main)
         self.control = control.Control(self.display, self.main)
-        #self.ui = ui.UI(self.display)
+        self.ui = ui.UI(self.display)
         
         
         
@@ -51,8 +53,10 @@ class Main:
             self.display.clear_screen()
             
             self.level.draw_level()
+            self.level.update_camera()
 
-            #self.ui.draw_menu()
+            if self.game_state == "menu":
+                self.ui.draw_menu()
             
             # Draw debug message if active
             if config.DEBUG_TEXT_VISIBLE:

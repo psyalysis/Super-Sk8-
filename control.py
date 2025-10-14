@@ -64,6 +64,23 @@ class Control:
                 keys_held_duration = 0
             else:
                 keys_held_duration += 1
+                self.handle_key_combo(self, keys_held, keys_held_duration)
         previous_keys_held = keys_held
     
-        
+    def handle_key_combo(self, keys_held):
+        """
+        Handles the key combo for the game based on the action.
+        """
+        if keys_held[0] == "left-left" and keys_held[1] == "right-down":
+            trick = "Kickflip"
+        elif keys_held[0] == "left-left" and keys_held[1] == "right-up":
+            trick = "Heelflip"
+        elif keys_held[0] == "left-down" and keys_held[1] == "right-down":
+            trick = "Varial Kickflip"
+        elif keys_held[0] == "left-up" and keys_held[1] == "right-up":
+            trick = "Varial Heelflip"
+        elif keys_held[0] == "left-up" and keys_held[1] == "right-down":
+            trick = "Nollie Kickflip"
+        elif keys_held[0] == "left-up" and keys_held[1] == "right-up":
+            trick = "Nollie Heelflip"
+            
