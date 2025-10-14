@@ -23,12 +23,16 @@ SCALE_FACTOR = 0.2
 FPS = 60
 
 # --- Texture settings ---
-FLOOR_TEXTURES_PATH = "./levels/"
+FLOOR_TEXTURES_PATH = "./objects/"
+
+# --- Camera settings ---
+CAMERA_ZOOM = 2
+CAMERA_SPEED = 1.0
 
 # --- Colors ---
 COLORS = {
     'primary': (52, 73, 94),
-    'background': (44, 62, 80),
+    'background': (0, 0, 0),
     'accent': (241, 196, 15),
     'success': (39, 174, 96),
     'danger': (192, 57, 43),

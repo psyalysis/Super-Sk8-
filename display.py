@@ -26,15 +26,10 @@ class Display:
         - UI elements
         """
         #self.clear_screen()
-        self.draw_level()
+
         self.draw_skateboard()
         self.draw_obstacles()
         self.draw_ui()
-        
-    def draw_level(self):
-        """
-        Draw the level/world.
-        """
         
         
     def draw_skateboard(self):

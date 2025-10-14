@@ -50,7 +50,7 @@ class Main:
             # Clear screen for next frame
             self.display.clear_screen()
             
-            #self.level.draw_environment()
+            self.level.draw_level()
 
             #self.ui.draw_menu()
             
