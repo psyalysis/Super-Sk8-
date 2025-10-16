@@ -43,13 +43,7 @@ COLORS = {
     'info': (39, 174, 96),
 }
 
-# --- Trick mappings ---
-TRICK_MAP = {
-    "BS-Shuv-It": ["left-down", ""],
-    "FS-Shuv-It": ["left-up", ""],
-    "Kickflip": ["left-left", "right-down"],
-    "Heelflip": ["left-left", "right-up"]
-}
+ANIMATIONS = "frames/"
 
 GRIND_TRICK_MAP = {
     "50-50": ["center"],

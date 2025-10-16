@@ -15,6 +15,7 @@ class Main:
         self.running = True
         
         self.game_state = "menu"
+        self.player_state = "rolling"
         
         pygame.init()
         self.screen = pygame.display.set_mode((config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT))
@@ -45,16 +46,19 @@ class Main:
                 if event.type == pygame.QUIT:
                     self.running = False
                 elif event.type == pygame.KEYDOWN:
-                    self.control.handle_key_down(event.key)
+                    self.control.handle_key_down(event.key, self.player_state)
                 elif event.type == pygame.KEYUP:
-                    self.control.handle_key_up(event.key)
+                    self.control.handle_key_up(event.key, self.player_state)
             
             # Clear screen for next frame
             self.display.clear_screen()
             
             self.level.draw_level()
             self.level.update_camera()
+            self.control.update()
 
+            self.display.draw_scene()
+            
             if self.game_state == "menu":
                 self.ui.draw_menu()
             

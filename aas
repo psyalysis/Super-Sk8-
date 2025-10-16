@@ -1,9 +1,0 @@
-You could break this into separate files such as:
-main.py (entry point)
-display.py (display/window logic)
-colors.py (color schemes/constants)
-skateboard.py (skateboard sprite/logic)
-ui.py (UI elements, progress bars, etc.)
-sound.py (audio/mixer handling)
-config.py (configuration/constants)
-This separation improves organization, readability, and maintainability.

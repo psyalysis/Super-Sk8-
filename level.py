@@ -18,20 +18,17 @@ class Level:
         self.camera_x = 0.0
         self.camera_y = 0.0
         
+        # Chunk system - proper infinite terrain approach
+        self.chunk_size = 8  # 8x8 tiles per chunk
+        self.loaded_chunks = {}  # Dictionary: (chunk_x, chunk_y) -> tiles
+        self.chunk_load_distance = 3  # Load chunks within 3 chunks of camera
         
-
-        self.rows = 0
         # Calculate viewport bounds
         self.viewport_width = config.DISPLAY_WIDTH // config.CAMERA_ZOOM
         self.viewport_height = config.DISPLAY_HEIGHT // config.CAMERA_ZOOM
         
-        self.tiles = []
-        self.last_chunk_removed_at = -1  # Track when last chunk was removed
-        self.frame_counter = 0  # Frame counter for chunk management
-        
-        #Create 5 starter chunks
-        for starterChunks in range(8):
-            self.create_chunk()
+        # Initialize with chunks around origin
+        self.update_chunks()
 
     def load_textures(self):
         """Load and pre-scale textures for better performance"""
@@ -54,45 +51,86 @@ class Level:
         
                    
     def draw_level(self):
+        """Draw all visible tiles from loaded chunks"""
+        for chunk_key, tiles in self.loaded_chunks.items():
+            for tile_data in tiles:
+                tile_texture, tile_x, tile_y = tile_data
+                # Apply camera offset
+                screen_x = tile_x + self.camera_x
+                screen_y = tile_y + self.camera_y
+                
+                # Only draw tiles that are potentially visible
+                if (screen_x > -64 and screen_x < config.DISPLAY_WIDTH + 64 and 
+                    screen_y > -64 and screen_y < config.DISPLAY_HEIGHT + 64):
+                    self.display.screen.blit(tile_texture, (screen_x, screen_y))
         
-        """
-        for x in range(42):
-            for y in range(5):
-                tile = self.Tile2 if (x + y) % 2 == 0 else self.Tile3
-                
-                # Tile pos calculations
-                px = (x * 16 - y * 16) * self.zoom
-                py = (100 + x * 8 + y * 8) * self.zoom
-                
-                scaled_tile = pygame.transform.scale(tile, (int(tile.get_width() * self.zoom), int(tile.get_height() * self.zoom)))
-                
-                #Move tiles according to camera position
-                px += self.camera_x
-                py += self.camera_y
-                """
+    def get_camera_chunk_coords(self):
+        """Convert camera position to chunk coordinates"""
+        # Based on the original coordinate system from the commented code
+        # Original: px = (x * 16 - y * 16) * zoom, py = (100 + x * 8 + y * 8) * zoom
         
-        #Draw Every Tile in their position     
-        for tile in self.tiles:
-            tile_x = tile[1] + self.camera_x
-            tile_y = tile[2] + self.camera_y
-            self.display.screen.blit(tile[0], (tile_x, tile_y))
+        # Convert camera position to approximate grid coordinates
+        # Since camera moves at speed 6 horizontally and 3 vertically
+        # We need to reverse the isometric projection
         
-    def create_chunk(self):
-        for x in range(6):
-            self.rows += 1
-            for y in range(6):
-                tile = self.Tile2 if (x + y) % 2 == 0 else self.Tile3
+        # Approximate conversion based on the original system
+        # The original system used: rows (x) and y coordinates
+        # Camera moves backwards, so we calculate which "row" we're at
+        approximate_row = int(-self.camera_x / (16 * self.zoom))
+        
+        # Convert to chunk coordinates
+        chunk_x = approximate_row // self.chunk_size
+        chunk_y = 0  # For now, keep it simple with single row chunks
+        
+        return chunk_x, chunk_y
+    
+    def create_chunk(self, chunk_x, chunk_y):
+        """Create a chunk at specific coordinates using original coordinate system"""
+        tiles = []
+        
+        # Calculate the starting row for this chunk
+        start_row = chunk_x * self.chunk_size
+        
+        for local_x in range(self.chunk_size):
+            row = start_row + local_x
+            for local_y in range(self.chunk_size):
+                # Use the original coordinate system
+                tile = self.Tile2 if (row + local_y) % 2 == 0 else self.Tile3
                 
-                px = ((self.rows * 16 - y * 16) * self.zoom) - 150
-                py = (self.rows * 8 + y * 8) * self.zoom
+                # Original coordinate calculation
+                px = ((row * 16 - local_y * 16) * self.zoom) - 150
+                py = (row * 8 + local_y * 8) * self.zoom
                 
-                # Use pre-scaled texture (no runtime scaling needed)
-                # Use tuple for better performance than list
-                self.tiles.append((tile, px, py))
-                
-    def remove_old_chunk(self):
-        # Each chunk has 6x6 = 36 tiles, so remove 36 tiles
-        self.tiles = self.tiles[36:]
+                tiles.append((tile, px, py))
+        
+        return tiles
+    
+    def update_chunks(self):
+        """Update loaded chunks based on camera position"""
+        camera_chunk_x, camera_chunk_y = self.get_camera_chunk_coords()
+        
+        # For the original system, we mainly need chunks ahead and behind
+        # Load chunks ahead (positive x) and behind (negative x) the camera
+        chunks_to_load = set()
+        for dx in range(-self.chunk_load_distance, self.chunk_load_distance + 1):
+            chunk_x = camera_chunk_x + dx
+            chunk_y = camera_chunk_y  # Keep y at 0 for now
+            chunks_to_load.add((chunk_x, chunk_y))
+        
+        # Remove chunks that are no longer needed
+        chunks_to_remove = []
+        for chunk_key in self.loaded_chunks.keys():
+            if chunk_key not in chunks_to_load:
+                chunks_to_remove.append(chunk_key)
+        
+        for chunk_key in chunks_to_remove:
+            del self.loaded_chunks[chunk_key]
+        
+        # Load new chunks
+        for chunk_x, chunk_y in chunks_to_load:
+            chunk_key = (chunk_x, chunk_y)
+            if chunk_key not in self.loaded_chunks:
+                self.loaded_chunks[chunk_key] = self.create_chunk(chunk_x, chunk_y)
         
     def update_camera(self):
         camera_speed = config.CAMERA_SPEED
@@ -101,28 +139,7 @@ class Level:
         self.camera_x -= camera_speed
         self.camera_y -= camera_speed / 2 
         
-        # Increment frame counter
-        self.frame_counter += 1
-        
-        # Calculate chunk management frequency based on camera speed
-        # Higher speeds need more frequent chunk management
-        chunk_check_frequency = max(1, 8 - (camera_speed // 3))
-        
-        # Manage chunks based on camera speed
-        if self.frame_counter % chunk_check_frequency == 0:
-            #Calculate how many tiles have been scrolled
-            tiles_scrolled_x = self.camera_x // 16
-            tiles_scrolled_y = self.camera_y // 8
-            
-            #Use pythagorean theorem to calculate the total tiles scrolled!! Maths coming in handy
-            tiles_scrolled = int(math.sqrt(tiles_scrolled_x**2 + tiles_scrolled_y**2))
-            
-            # Create chunks more aggressively - check if we need a new chunk
-            # Instead of exact modulo, check if we've scrolled enough since last chunk
-            tiles_since_last_chunk = tiles_scrolled - self.last_chunk_removed_at
-            if tiles_since_last_chunk >= 16:
-                self.last_chunk_removed_at = tiles_scrolled
-                self.create_chunk()
-                self.remove_old_chunk()
+        # Update chunks based on new camera position
+        self.update_chunks()
             
         

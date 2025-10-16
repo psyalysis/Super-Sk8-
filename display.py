@@ -8,7 +8,28 @@ class Display:
         self.screen = screen
         self.font = pygame.font.Font(config.FONT_PATH, config.FONT_SIZE_SMALL)
         self.debug_text_position = (10, 10) 
+        self.skateboard_sprite = None
+        # Position skateboard over middle of tiles on left side of window
+        # Based on tile positioning: px = ((rows * 16 - y * 16) * zoom) - 150, py = (rows * 8 + y * 8) * zoom
+        # With zoom=2, positioning at left side center of tile area
+        self.skateboard_position = (200, 300)
+        self.skateboard_angle = 0
+        self.load_skateboard_sprite()
+    
+    def load_skateboard_sprite(self):
+        """
+        Load the skateboard sprite from file.
+        """
         
+        skateboard_path = "./animations/default.png"
+        self.skateboard_sprite = pygame.image.load(skateboard_path)
+        
+        # Scale skateboard to match level resolution using camera zoom
+        original_width, original_height = self.skateboard_sprite.get_size()
+        scaled_size = (int(original_width * config.CAMERA_ZOOM), int(original_height * config.CAMERA_ZOOM))
+        self.skateboard_sprite = pygame.transform.scale(self.skateboard_sprite, scaled_size)
+        
+
     def clear_screen(self):
         """
         Clears the entire screen by filling it with the background color,
@@ -28,15 +49,12 @@ class Display:
         #self.clear_screen()
 
         self.draw_skateboard()
-        self.draw_obstacles()
-        self.draw_ui()
+        #self.draw_obstacles()
         
         
     def draw_skateboard(self):
-        """
-        Draw the skateboard.
-        """
-        pass
+        
+        self.screen.blit(self.skateboard_sprite, self.skateboard_position)
         
     def draw_obstacles(self):
         """
