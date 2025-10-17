@@ -43,7 +43,7 @@ COLORS = {
     'info': (39, 174, 96),
 }
 
-ANIMATIONS = "frames/"
+ANIMATIONS = "animations/"
 
 GRIND_TRICK_MAP = {
     "50-50": ["center"],
@@ -53,7 +53,7 @@ GRIND_TRICK_MAP = {
     "Smith": ["right", "center"],
 }
 
-TRICK_POINTS = {
+"""TRICK_POINTS = {
     "BS-Shuv-It": 100,
     "FS-Shuv-It": 100,
     "Kickflip": 150,
@@ -66,22 +66,17 @@ TRICK_POINTS = {
     "Nosegrind": 120,
     "Crooked": 140,
     "Smith": 140,
-}
+}"""
 
 # --- Animation settings ---
-ANIMATION_FRAME_RATE = 12
-TRICK_ANIMATION_DURATION = 0.5  # seconds
+ANIMATION_FRAME_RATE = 24
+TRICK_ANIMATION_DURATION = 0.15  # seconds
 LANDING_ANIMATION_DURATION = 0.3  # seconds
 
 # --- Sound settings ---
 SOUND_PATHS = {
-    "kickflip": "assets/sounds/kickflip.wav",
-    "heelflip": "assets/sounds/heelflip.wav",
-    "shuvit": "assets/sounds/shuvit.wav",
-    "grind": "assets/sounds/grind.wav",
-    "land": "assets/sounds/land.wav",
-    "bail": "assets/sounds/bail.wav",
-    "roll": "assets/sounds/roll.wav",
+    "land": "SFX/land_",
+    "pop": "SFX/pop_"
 }
 
 SOUND_VOLUME = 0.6
@@ -109,5 +104,48 @@ KEY_MAPPINGS = {
     pygame.K_k: 'right-down',
     pygame.K_j: 'right-left',
     pygame.K_l: 'right-right',
+}
+
+# --- Trick Controls ---
+FLIP_CONTROLS = {
+    # No double tap tricks
+    "Kickflip": {
+        "keys": [["left-left", False], ["right-down", False]]
+    },
+    "Heelflip": {
+        "keys": [["left-left", False], ["right-up", False]]
+    },
+    "Varial Kickflip": {
+        "keys": [["left-down", False], ["right-down", False]]
+    },
+    "Varial Heelflip": {
+        "keys": [["left-up", False], ["right-up", False]]
+    },
+    "Hardflip": {
+        "keys": [["left-up", False], ["right-down", False]]
+    },
+    "Inward Heelflip": {
+        "keys": [["left-down", False], ["right-up", False]]
+    },
+    "BS-Shuv": {
+        "keys": [["left-down", False], ["right-left", False]]
+    },
+    "FS-Shuv": {
+        "keys": [["left-up", False], ["right-left", False]]
+    },
+    
+    # Double tap tricks
+    "360 Hardflip": {
+        "keys": [["left-up", True], ["right-down", False]]
+    },
+    "360 Inward Heelflip": {
+        "keys": [["left-down", True], ["right-up", False]]
+    },
+    "Tre Flip": {
+        "keys": [["left-down", True], ["right-down", False]]
+    },
+    "Lazer Flip": {
+        "keys": [["left-up", True], ["right-up", False]]
+    }
 }
 
