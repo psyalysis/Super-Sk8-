@@ -5,7 +5,7 @@ import pygame
 import os
 import time
 import random
-from core.state_manager import PlayerState
+from core.state_manager import StateManager
 from tricks import TrickManager
 
 
@@ -32,9 +32,9 @@ class Control:
                 self.animations[trick_name] = pygame.image.load(full_path)
 
     def handle_input(self, input_data):
-        if self.state_manager.is_in_player_state(PlayerState.ROLLING):
+        if self.state_manager.is_player_rolling():
             self.handle_trick_combo(input_data)
-        elif self.state_manager.is_in_player_state(PlayerState.AIRBORNE):
+        elif self.state_manager.is_player_airborne():
             self.handle_trick_combo_end(input_data)
 
     def update(self):
@@ -123,13 +123,13 @@ class Control:
                 if self.ui and self.trick_manager.current_trick:
                     self.ui.show_trick_fail(self.trick_manager.current_trick)
             
-            self.state_manager.transition_player_state(PlayerState.ROLLING)
+            self.state_manager.end_trick()
             self.display.stop_animation()
             self.trick_manager.reset_trick()
             pygame.mixer.Sound(config.SOUND_PATHS["land"] + str(random.randint(1, 5)) + ".wav").play()
     
     def execute_trick(self, trick_name):
-        self.state_manager.transition_player_state(PlayerState.AIRBORNE)
+        self.state_manager.start_trick()
 
         if trick_name not in self.animations:
             return

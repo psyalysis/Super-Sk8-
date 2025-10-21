@@ -1,13 +1,8 @@
-"""Settings/configuration module."""
+"""Essential settings/configuration module."""
 
 # --- Debug Settings ---
 DEBUG_TEXT_VISIBLE = True
-DEBUG_PRINT_VISIBLE = False  # Set to True only when debugging - prints 60x/second
-
-# --- Game State ---
-"""loading, menu, playing"""
-GAME_STATE = "menu"
-
+DEBUG_PRINT_VISIBLE = False
 
 # --- Font settings ---
 FONT_PATH = "fonts/ari-w9500.ttf"
@@ -19,7 +14,6 @@ FONT_SIZE_LARGE = 32
 # --- Display settings ---
 DISPLAY_WIDTH = 1200
 DISPLAY_HEIGHT = 675
-SCALE_FACTOR = 0.2
 FPS = 60
 
 # --- Texture settings ---
@@ -43,52 +37,16 @@ COLORS = {
     'info': (39, 174, 96),
 }
 
-ANIMATIONS = "animations/"
-
-GRIND_TRICK_MAP = {
-    "50-50": ["center"],
-    "5-0": ["down", "center"],
-    "Nosegrind": ["up", "center"],
-    "Crooked": ["left", "center"],
-    "Smith": ["right", "center"],
-}
-
-"""TRICK_POINTS = {
-    "BS-Shuv-It": 100,
-    "FS-Shuv-It": 100,
-    "Kickflip": 150,
-    "Heelflip": 150,
-    "Impossible": 200,
-    "Varial Kickflip": 250,
-    "360 Flip": 300,
-    "50-50": 80,
-    "5-0": 120,
-    "Nosegrind": 120,
-    "Crooked": 140,
-    "Smith": 140,
-}"""
-
 # --- Animation settings ---
+ANIMATIONS = "animations/"
 ANIMATION_FRAME_RATE = 24
-TRICK_ANIMATION_DURATION = 0.15  # seconds
-LANDING_ANIMATION_DURATION = 0.3  # seconds
 
 # --- Sound settings ---
 SOUND_PATHS = {
     "land": "SFX/land_",
     "pop": "SFX/pop_"
 }
-
 SOUND_VOLUME = 0.6
-
-# --- Game mechanics constants ---
-SKATE_SPEED = 6.0
-TRICK_WINDOW = 0.35  # seconds to input trick
-GRIND_TOLERANCE = 0.18  # allowed angle for grind
-LANDING_THRESHOLD = 0.22  # allowed angle for landing
-CRACK_PENALTY = 0.5  # speed reduction
-PATCH_BOOST = 1.2  # speed multiplier
-LEVEL_TIME_LIMIT = 60  # seconds
 
 # --- Key mappings ---
 import pygame
@@ -108,7 +66,6 @@ KEY_MAPPINGS = {
 
 # --- Trick Controls ---
 FLIP_CONTROLS = {
-    # No double tap tricks
     "Kickflip": {
         "keys": [["left-left", False], ["right-down", False]]
     },
@@ -133,8 +90,6 @@ FLIP_CONTROLS = {
     "FS-Shuv": {
         "keys": [["left-up", False], ["right-left", False]]
     },
-    
-    # Double tap tricks
     "360 Hardflip": {
         "keys": [["left-up", True], ["right-down", False]]
     },

@@ -12,6 +12,18 @@ class UI:
         self.settings_icon = pygame.image.load("icons/question.png")
         self.bob_frame = 0
         
+        # Pre-scale UI elements for better performance
+        self.button_scale = 4
+        self.scaled_button = pygame.transform.scale(
+            self.button, 
+            (self.button.get_width() * self.button_scale, 
+             self.button.get_height() * self.button_scale)
+        )
+        
+        icon_scale = self.button.get_height() * self.button_scale * 0.9
+        self.scaled_play_icon = pygame.transform.scale(self.play_icon, (icon_scale, icon_scale))
+        self.scaled_settings_icon = pygame.transform.scale(self.settings_icon, (icon_scale, icon_scale))
+        
         # Trick display
         self.current_trick_display = None
         self.trick_display_duration = 2000  # 2 seconds
@@ -26,21 +38,11 @@ class UI:
         horizontal_center = width // 2
         horizontal_offset = 400
 
-        button_width = self.button.get_width()
-        button_height = self.button.get_height()
-
-        play_button = self.button.copy()
-        settings_button = self.button.copy()
-        play_button_icon = self.play_icon.copy()
-        settings_button_icon = self.settings_icon.copy()
+        # Use pre-scaled button dimensions
+        scaled_button_width = self.scaled_button.get_width()
+        scaled_button_height = self.scaled_button.get_height()
         
-        button_scale = 4
         vertical_spacing = 64
-
-        play_button = pygame.transform.scale(play_button, (button_width * button_scale, button_height * button_scale))
-        settings_button = pygame.transform.scale(settings_button, (button_width * button_scale, button_height * button_scale))
-        scaled_button_width = play_button.get_width()
-        scaled_button_height = play_button.get_height()
 
         self.bob_frame += 0.25
         if self.bob_frame > 20:
@@ -56,26 +58,24 @@ class UI:
         play_button_y = center_y - total_height // 2 + bob_offset
         settings_button_y = play_button_y + scaled_button_height + vertical_spacing
         
-        play_button_icon = pygame.transform.scale(play_button_icon, (button_height * button_scale * 0.9, button_height * button_scale * 0.9))
-        settings_button_icon = pygame.transform.scale(settings_button_icon, (button_height * button_scale * 0.9, button_height * button_scale * 0.9))
-        
         play_button_icon_x = button_x + scaled_button_height // 2
         settings_button_icon_x = button_x + scaled_button_height // 2
         
         play_button_icon_y = play_button_y + scaled_button_height // 2
         settings_button_icon_y = settings_button_y + scaled_button_height // 2
         
-        self.display.screen.blit(play_button, (button_x, play_button_y))
-        self.display.screen.blit(settings_button, (button_x, settings_button_y))
+        # Use pre-scaled elements
+        self.display.screen.blit(self.scaled_button, (button_x, play_button_y))
+        self.display.screen.blit(self.scaled_button, (button_x, settings_button_y))
 
         self.display.screen.blit(
-            play_button_icon,
-            (play_button_icon_x, play_button_y + scaled_button_height // 2 - play_button_icon.get_height() // 2)
+            self.scaled_play_icon,
+            (play_button_icon_x, play_button_y + scaled_button_height // 2 - self.scaled_play_icon.get_height() // 2)
         )
 
         self.display.screen.blit(
-            settings_button_icon,
-            (settings_button_icon_x, settings_button_y + scaled_button_height // 2 - settings_button_icon.get_height() // 2)
+            self.scaled_settings_icon,
+            (settings_button_icon_x, settings_button_y + scaled_button_height // 2 - self.scaled_settings_icon.get_height() // 2)
         )
         
     def draw_progress_bar(self):

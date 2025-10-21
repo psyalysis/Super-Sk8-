@@ -63,35 +63,13 @@ class Display:
         
         self.set_trick_speed(trick_name)
         
-        self.animation_frames = self.extract_frames_from_spritemap(animation_sprite)
+        # Use cached frames instead of extracting each time
+        self.animation_frames = self.resource_manager.get_animation_frames(trick_name)
         self.animation_frame = 0
         self.animation_running = True
         self.animation_loop = loop
         self.last_frame_time = pygame.time.get_ticks()
     
-    def extract_frames_from_spritemap(self, spritemap):
-        frames = []
-        
-        spritemap_width, spritemap_height = spritemap.get_size()
-        estimated_frame_width = spritemap_height
-        estimated_frame_count = spritemap_width // estimated_frame_width
-        
-        for i in range(estimated_frame_count):
-            frame_x = i * estimated_frame_width
-            frame_y = 0
-            frame_width = estimated_frame_width
-            frame_height = spritemap_height
-            
-            frame_surface = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
-            frame_surface.blit(spritemap, (0, 0), (frame_x, frame_y, frame_width, frame_height))
-            
-            original_width, original_height = frame_surface.get_size()
-            scaled_size = (int(original_width * config.CAMERA_ZOOM), int(original_height * config.CAMERA_ZOOM))
-            scaled_frame = pygame.transform.scale(frame_surface, scaled_size)
-            
-            frames.append(scaled_frame)
-        
-        return frames
     
     def set_trick_speed(self, trick_name):
         self.frame_duration = self.base_frame_duration

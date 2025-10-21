@@ -7,10 +7,10 @@ import level
 import control
 import ui
 import debug
-from core.state_manager import StateManager, GameState, PlayerState
+from core.state_manager import StateManager
 from core.input_handler import InputHandler
 from core.resource_manager import ResourceManager
-from core.performance_manager import PerformanceManager
+
 
 
 class Main:
@@ -26,11 +26,13 @@ class Main:
         self.state_manager = StateManager()
         self.input_handler = InputHandler()
         self.resource_manager = ResourceManager()
-        self.performance_manager = PerformanceManager()
+        
+        # Preload animation frames for better performance
+        self.resource_manager.preload_animation_frames(config.ANIMATIONS)
         
         # Initialize game modules
         self.display = display.Display(self.screen, self.resource_manager)
-        self.debug = debug.Debug(self)
+        self.debug = debug.Debug()
         self.level = level.Level(self.display, self.resource_manager)
         self.ui = ui.UI(self.display)
         self.control = control.Control(self.display, self.state_manager, self.input_handler, self.debug, self.ui)
@@ -65,30 +67,20 @@ class Main:
             self.level.update_camera()
             self.display.draw_scene()
             
-            if self.state_manager.is_in_game_state(GameState.MENU):
+            if self.state_manager.is_in_menu():
                 self.ui.draw_menu()
             
             # Draw trick display
             self.ui.draw_trick_display()
             
-            # Debug display
-            if config.DEBUG_TEXT_VISIBLE:
-                debug_msg = self.debug.get_current_message()
-                if debug_msg:
-                    self.display.draw_debug(debug_msg)
-            
             pygame.display.update()
             
-            # Performance tracking
-            frame_time = pygame.time.get_ticks() - frame_start
-            self.performance_manager.record_frame_time(frame_time)
         
         self.exit()
         
     def exit(self):
         self.running = False
         self.resource_manager.cleanup()
-        self.performance_manager.cleanup()
         pygame.quit()
 
 if __name__ == "__main__":
