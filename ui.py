@@ -1,6 +1,8 @@
 """UI module."""
 
 import pygame
+import config
+
 
 class UI:
     def __init__(self, display):
@@ -10,14 +12,16 @@ class UI:
         self.settings_icon = pygame.image.load("icons/question.png")
         self.bob_frame = 0
         
+        # Trick display
+        self.current_trick_display = None
+        self.trick_display_duration = 2000  # 2 seconds
+        self.trick_display_start_time = 0
+        
+        # Load bold font for trick display
+        self.trick_font = self.display.resource_manager.load_font(config.FONT_BOLD_PATH, config.FONT_SIZE_MEDIUM)
+        
     def draw_menu(self):
-        """
-        Draws a pixel art style play button (light grey) and a settings button underneath.
-        Both are centered horizontally, with the settings button below the play button.
-        """       
-        
-        
-        screen = self.display.screen  # Assume display has the pygame surface as .screen
+        screen = self.display.screen
         width, height = screen.get_size()
         horizontal_center = width // 2
         horizontal_offset = 400
@@ -29,67 +33,112 @@ class UI:
         settings_button = self.button.copy()
         play_button_icon = self.play_icon.copy()
         settings_button_icon = self.settings_icon.copy()
-        # Size and space
+        
         button_scale = 4
-        vertical_spacing = 64  # Space between buttons in pixels (after scaling)
+        vertical_spacing = 64
 
-        # Rescale buttons
         play_button = pygame.transform.scale(play_button, (button_width * button_scale, button_height * button_scale))
         settings_button = pygame.transform.scale(settings_button, (button_width * button_scale, button_height * button_scale))
         scaled_button_width = play_button.get_width()
         scaled_button_height = play_button.get_height()
 
-        # Animation: make both buttons bob together
         self.bob_frame += 0.25
         if self.bob_frame > 20:
             self.bob_frame = 0
 
-        #Bob offset is 5 pixels up and 5 pixels down every 10 frames
         bob_offset = 5 if self.bob_frame > 10 else -5
 
-        # Centered horizontally
         button_x = horizontal_center - scaled_button_width // 2 + horizontal_offset
 
-        # Center both buttons vertically and space them apart
         total_height = (scaled_button_height * 2) + vertical_spacing
         center_y = height // 2
 
-        #Position the buttons vertically with the bobbing effect
         play_button_y = center_y - total_height // 2 + bob_offset
         settings_button_y = play_button_y + scaled_button_height + vertical_spacing
         
-        #Scale the icons according to the button height (because the icons are 1:1 ratio)
-        #Icons are also slightly scaled down to fit inside button better
         play_button_icon = pygame.transform.scale(play_button_icon, (button_height * button_scale * 0.9, button_height * button_scale * 0.9))
         settings_button_icon = pygame.transform.scale(settings_button_icon, (button_height * button_scale * 0.9, button_height * button_scale * 0.9))
         
-        #Position the icons in the center of the buttons horizontally (after scaling)
         play_button_icon_x = button_x + scaled_button_height // 2
         settings_button_icon_x = button_x + scaled_button_height // 2
         
-        #Position the icons vertically in the center of the buttons
         play_button_icon_y = play_button_y + scaled_button_height // 2
         settings_button_icon_y = settings_button_y + scaled_button_height // 2
         
-        #Draw the buttons
         self.display.screen.blit(play_button, (button_x, play_button_y))
         self.display.screen.blit(settings_button, (button_x, settings_button_y))
 
-        # Draw the play icon
         self.display.screen.blit(
             play_button_icon,
             (play_button_icon_x, play_button_y + scaled_button_height // 2 - play_button_icon.get_height() // 2)
         )
 
-        # Draw the settings icon
         self.display.screen.blit(
             settings_button_icon,
             (settings_button_icon_x, settings_button_y + scaled_button_height // 2 - settings_button_icon.get_height() // 2)
         )
         
-        
     def draw_progress_bar(self):
-        """
-        Draw the progress bar.
-        """
         pass
+    
+    def show_trick_start(self, trick_name):
+        """Show trick name in grey when trick starts."""
+        self.current_trick_display = {
+            'text': trick_name,
+            'color': config.COLORS['gray'],
+            'type': 'start'
+        }
+        self.trick_display_start_time = pygame.time.get_ticks()
+    
+    def show_trick_success(self, trick_name, score):
+        """Show trick name and score in green for successful landing."""
+        self.current_trick_display = {
+            'text': f"{trick_name} - {score}",
+            'color': config.COLORS['success'],
+            'type': 'success'
+        }
+        self.trick_display_start_time = pygame.time.get_ticks()
+    
+    def show_trick_fail(self, trick_name):
+        """Show trick name in red for failed landing."""
+        self.current_trick_display = {
+            'text': trick_name,
+            'color': config.COLORS['danger'],
+            'type': 'fail'
+        }
+        self.trick_display_start_time = pygame.time.get_ticks()
+    
+    def update_trick_display(self):
+        """Update trick display timer and clear if expired."""
+        if self.current_trick_display:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.trick_display_start_time > self.trick_display_duration:
+                self.current_trick_display = None
+    
+    def draw_trick_display(self):
+        """Draw current trick display in bottom middle of screen."""
+        if not self.current_trick_display:
+            return
+        
+        screen = self.display.screen
+        width, height = screen.get_size()
+        
+        # Position in bottom middle
+        x = width // 2
+        y = height - 60
+        
+        # Render text with drop shadow
+        text = self.current_trick_display['text']
+        color = self.current_trick_display['color']
+        
+        # Render shadow (black, offset by 2 pixels)
+        shadow_surface = self.trick_font.render(text, True, config.COLORS['black'])
+        shadow_rect = shadow_surface.get_rect(center=(x + 2, y + 2))
+        
+        # Render main text
+        text_surface = self.trick_font.render(text, True, color)
+        text_rect = text_surface.get_rect(center=(x, y))
+        
+        # Draw shadow first, then main text
+        screen.blit(shadow_surface, shadow_rect)
+        screen.blit(text_surface, text_rect)

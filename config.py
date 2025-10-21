@@ -27,7 +27,7 @@ FLOOR_TEXTURES_PATH = "./objects/"
 
 # --- Camera settings ---
 CAMERA_ZOOM = 2
-CAMERA_SPEED = 6
+CAMERA_SPEED = 8
 
 # --- Colors ---
 COLORS = {
