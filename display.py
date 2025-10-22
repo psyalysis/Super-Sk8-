@@ -11,6 +11,7 @@ class Display:
         self.font = self.resource_manager.load_font(config.FONT_PATH, config.FONT_SIZE_SMALL)
         self.debug_text_position = (10, 10) 
         self.skateboard_sprite = None
+        self.level = None  # Will be set by main.py
         
         # Animation system
         self.current_animation = None
@@ -22,8 +23,14 @@ class Display:
         self.last_frame_time = 0
         self.base_frame_duration = (1000 / config.ANIMATION_FRAME_RATE) / 2
         self.frame_duration = self.base_frame_duration
+        self.frame_rate_limit = True  # Enable frame rate limiting
+        self.max_frame_time = 1000 / 60  # Cap at 60 FPS
         
-        self.skateboard_base_position = (200, 300)
+        # Calculate skateboard position based on screen size
+        self.skateboard_base_position = (
+            int(200 * config.SCALE_FACTOR),
+            int(250 * config.SCALE_FACTOR)
+        )
         self.load_skateboard_sprite()
     
     def load_skateboard_sprite(self):
@@ -38,10 +45,16 @@ class Display:
         
     def draw_skateboard(self):
         if self.animation_running and self.current_animation and self.animation_frames:
-            trick_position = (self.skateboard_base_position[0], self.skateboard_base_position[1] - 50)
+            trick_position = (
+                self.skateboard_base_position[0], 
+                self.skateboard_base_position[1] - int(50 * config.SCALE_FACTOR)
+            )
             
             current_time = pygame.time.get_ticks()
-            if current_time - self.last_frame_time >= self.frame_duration:
+            time_since_last_frame = current_time - self.last_frame_time
+            
+            # Update animation frame if enough time has passed
+            if time_since_last_frame >= self.frame_duration:
                 if self.animation_loop:
                     self.animation_frame = (self.animation_frame + 1) % len(self.animation_frames)
                 else:
@@ -52,9 +65,11 @@ class Display:
                         return
                 self.last_frame_time = current_time
             
+            # Always draw the current frame, regardless of frame rate limiting
             current_sprite = self.animation_frames[self.animation_frame]
             self.screen.blit(current_sprite, trick_position)
         else:
+            # Skateboard stays in fixed screen position (in front of scrolling level)
             self.screen.blit(self.skateboard_sprite, self.skateboard_base_position)
         
     def start_animation(self, trick_name, animation_sprite, loop=False):
@@ -94,6 +109,11 @@ class Display:
         self.current_trick = None
         self.animation_frames = []
         self.animation_frame = 0
+    
+    def set_frame_rate_limit(self, enabled, max_fps=60):
+        """Enable/disable frame rate limiting for animations."""
+        self.frame_rate_limit = enabled
+        self.max_frame_time = 1000 / max_fps if enabled else 0
 
     def draw_debug(self, info):
         if info[1] == "success":

@@ -9,6 +9,7 @@ import config
 class ResourceManager:
     def __init__(self):
         self.textures: Dict[str, pygame.Surface] = {}
+        self.scaled_textures: Dict[str, pygame.Surface] = {}  # Cache for scaled textures
         self.sounds: Dict[str, pygame.mixer.Sound] = {}
         self.fonts: Dict[str, pygame.font.Font] = {}
         self.animation_frames_cache: Dict[str, List[pygame.Surface]] = {}
@@ -23,13 +24,32 @@ class ResourceManager:
             try:
                 texture = pygame.image.load(path)
                 self.textures[path] = texture
-            except pygame.error:
+            except pygame.error as e:
+                print(f"Warning: Failed to load texture {path}: {e}")
+                return None
+            except Exception as e:
+                print(f"Error: Unexpected error loading texture {path}: {e}")
                 return None
         
         if scale_factor and scale_factor != 1.0:
-            original_size = texture.get_size()
-            new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
-            return pygame.transform.scale(texture, new_size)
+            # Create cache key for scaled texture
+            cache_key = f"{path}_{scale_factor}"
+            
+            # Return cached scaled texture if available
+            if cache_key in self.scaled_textures:
+                return self.scaled_textures[cache_key]
+            
+            try:
+                original_size = texture.get_size()
+                new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
+                scaled_texture = pygame.transform.scale(texture, new_size)
+                
+                # Cache the scaled texture
+                self.scaled_textures[cache_key] = scaled_texture
+                return scaled_texture
+            except Exception as e:
+                print(f"Error: Failed to scale texture {path}: {e}")
+                return texture
         
         return texture
     
@@ -43,7 +63,11 @@ class ResourceManager:
             sound.set_volume(config.SOUND_VOLUME)
             self.sounds[path] = sound
             return sound
-        except pygame.error:
+        except pygame.error as e:
+            print(f"Warning: Failed to load sound {path}: {e}")
+            return None
+        except Exception as e:
+            print(f"Error: Unexpected error loading sound {path}: {e}")
             return None
     
     def load_font(self, path: str, size: int) -> Optional[pygame.font.Font]:
@@ -56,7 +80,15 @@ class ResourceManager:
             font = pygame.font.Font(path, size)
             self.fonts[cache_key] = font
             return font
-        except pygame.error:
+        except pygame.error as e:
+            print(f"Warning: Failed to load font {path}: {e}")
+            # Fallback to default font
+            try:
+                return pygame.font.Font(None, size)
+            except:
+                return None
+        except Exception as e:
+            print(f"Error: Unexpected error loading font {path}: {e}")
             return None
     
     def preload_animation_frames(self, animations_path: str) -> Dict[str, List[pygame.Surface]]:
@@ -106,9 +138,25 @@ class ResourceManager:
         """Get cached animation frames for a trick."""
         return self.animation_frames_cache.get(trick_name, [])
     
+    def precalculate_common_scaled_textures(self):
+        """Pre-calculate commonly used scaled textures."""
+        common_textures = [
+            ("./animations/Default.png", config.CAMERA_ZOOM),
+            ("./objects/Tile1.png", config.CAMERA_ZOOM),
+            ("./objects/Tile2.png", config.CAMERA_ZOOM),
+            ("./objects/Tile3.png", config.CAMERA_ZOOM),
+            ("./objects/StairTile1.png", config.CAMERA_ZOOM),
+            ("./objects/StairTile2.png", config.CAMERA_ZOOM),
+        ]
+        
+        for path, scale_factor in common_textures:
+            if os.path.exists(path):
+                self.load_texture(path, scale_factor)
+    
     def cleanup(self):
         """Clean up resources."""
         self.textures.clear()
+        self.scaled_textures.clear()
         self.sounds.clear()
         self.fonts.clear()
         self.animation_frames_cache.clear()

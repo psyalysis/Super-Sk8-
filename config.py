@@ -11,10 +11,31 @@ FONT_SIZE_SMALL = 16
 FONT_SIZE_MEDIUM = 24
 FONT_SIZE_LARGE = 32
 
-# --- Display settings ---
-DISPLAY_WIDTH = 1200
-DISPLAY_HEIGHT = 675
+# --- Display settings --- chatgpt
+# Supported resolutions
+SUPPORTED_RESOLUTIONS = [
+    (800, 600),    # 4:3
+    (1024, 768),   # 4:3
+    (1280, 720),   # 16:9
+    (1200, 675),   # 16:9 (default)
+    (1366, 768),   # 16:9
+    (1600, 900),   # 16:9
+    (1920, 1080),  # 16:9
+]
+
+DISPLAY_WIDTH = 1600
+DISPLAY_HEIGHT = 900
 FPS = 60
+
+# Use the specified display dimensions
+BEST_RESOLUTION = (DISPLAY_WIDTH, DISPLAY_HEIGHT)
+
+# Calculate scaling factors
+BASE_WIDTH = 1200
+BASE_HEIGHT = 675
+SCALE_X = BEST_RESOLUTION[0] / BASE_WIDTH
+SCALE_Y = BEST_RESOLUTION[1] / BASE_HEIGHT
+SCALE_FACTOR = min(SCALE_X, SCALE_Y)  # Uniform scaling
 
 # --- Texture settings ---
 FLOOR_TEXTURES_PATH = "./objects/"
@@ -47,6 +68,7 @@ SOUND_PATHS = {
     "pop": "SFX/pop_"
 }
 SOUND_VOLUME = 0.6
+MASTER_VOLUME = 1.0  # Master volume control
 
 # --- Key mappings ---
 import pygame

@@ -10,15 +10,16 @@ from tricks import TrickManager
 
 
 class Control:
-    def __init__(self, display, state_manager, input_handler, debug=None, ui=None):
+    def __init__(self, display, state_manager, input_handler, debug=None, ui=None, sound_manager=None):
         self.display = display
         self.state_manager = state_manager
         self.input_handler = input_handler
         self.debug = debug
         self.ui = ui
+        self.sound_manager = sound_manager
         
         # Initialize trick manager
-        self.trick_manager = TrickManager(display, state_manager, ui)
+        self.trick_manager = TrickManager(display, state_manager, ui, sound_manager)
         
         self.load_animations()
         
@@ -32,7 +33,9 @@ class Control:
                 self.animations[trick_name] = pygame.image.load(full_path)
 
     def handle_input(self, input_data):
-        if self.state_manager.is_player_rolling():
+        if self.state_manager.is_in_menu():
+            self.handle_menu_input(input_data)
+        elif self.state_manager.is_player_rolling():
             self.handle_trick_combo(input_data)
         elif self.state_manager.is_player_airborne():
             self.handle_trick_combo_end(input_data)
@@ -126,7 +129,10 @@ class Control:
             self.state_manager.end_trick()
             self.display.stop_animation()
             self.trick_manager.reset_trick()
-            pygame.mixer.Sound(config.SOUND_PATHS["land"] + str(random.randint(1, 5)) + ".wav").play()
+            
+            # Play landing sound using sound manager
+            if self.sound_manager:
+                self.sound_manager.play_land_sound()
     
     def execute_trick(self, trick_name):
         self.state_manager.start_trick()
@@ -144,9 +150,24 @@ class Control:
         if self.ui:
             self.ui.show_trick_start(trick_name)
 
-        random_sfx = random.randint(1, 6)
-        pygame.mixer.Sound(config.SOUND_PATHS["pop"] + str(random_sfx) + ".wav").play()
+        # Play pop sound using sound manager
+        if self.sound_manager:
+            self.sound_manager.play_pop_sound()
+        
         
         # Log trick execution
         if self.debug:
             self.debug.log_trick(trick_name)
+    
+    def handle_menu_input(self, input_data):
+        """Handle input when in menu state."""
+        action = input_data.get('action', '')
+        
+        if action == 'enter':
+            # Start the game
+            self.state_manager.start_game()
+            print("Game started!")
+        elif action == 'escape':
+            # Exit the game
+            import pygame
+            pygame.event.post(pygame.event.Event(pygame.QUIT))

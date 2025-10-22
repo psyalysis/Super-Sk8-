@@ -6,10 +6,11 @@ import os
 
 
 class TrickManager:
-    def __init__(self, display, state_manager, ui=None):
+    def __init__(self, display, state_manager, ui=None, sound_manager=None):
         self.display = display
         self.state_manager = state_manager
         self.ui = ui
+        self.sound_manager = sound_manager
         
         # Trick tracking
         self.current_trick = None
@@ -18,16 +19,11 @@ class TrickManager:
         self.keys_released_after_loop = False
         self.trick_completed = False
         self.total_frames = 0
-        
-        # Load success sound
-        self.success_sound = None
-        self.load_sounds()
     
     def load_sounds(self):
         """Load sound effects."""
-        success_path = "SFX/Success.mp3"
-        if os.path.exists(success_path):
-            self.success_sound = pygame.mixer.Sound(success_path)
+        # Sound loading is now handled by SoundManager
+        pass
     
     def start_trick(self, trick_name):
         """Called when a trick animation starts."""
@@ -142,12 +138,14 @@ class TrickManager:
         final_score = base_score * multiplier
         
         # Play success sound
-        if self.success_sound:
-            self.success_sound.play()
+        if self.sound_manager:
+            self.sound_manager.play_success_sound()
         
         # Show success in UI
         if self.ui:
             self.ui.show_trick_success(self.current_trick, final_score)
+        
+        self.display.level.add_camera_shake(2.0, 0.2)
         
         # Log successful trick completion with score info
         multiplier_text = {4: "PERFECT", 2: "GREAT", 1: "GOOD"}

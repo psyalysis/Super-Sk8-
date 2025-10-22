@@ -18,6 +18,14 @@ class Level:
         # Camera system
         self.camera_x = 0.0
         self.camera_y = 0.0
+        self.target_camera_x = 0.0
+        self.target_camera_y = 0.0
+        self.camera_smoothness = 0.1  # How smoothly camera follows target
+        
+        # Camera shake system
+        self.shake_intensity = 0.0
+        self.shake_duration = 0.0
+        self.shake_timer = 0.0
         
         # Chunk system
         self.chunk_size = 8
@@ -97,6 +105,38 @@ class Level:
         
     def update_camera(self):
         camera_speed = config.CAMERA_SPEED
-        self.camera_x -= camera_speed
-        self.camera_y -= camera_speed / 2 
+        
+        # Update target camera position
+        self.target_camera_x -= camera_speed
+        self.target_camera_y -= camera_speed / 2
+        
+        # Smooth camera interpolation
+        self.camera_x += (self.target_camera_x - self.camera_x) * self.camera_smoothness
+        self.camera_y += (self.target_camera_y - self.camera_y) * self.camera_smoothness
+        
+        # Update camera shake
+        self.update_camera_shake()
+        
         self.update_chunks()
+    
+    def add_camera_shake(self, intensity, duration):
+        """Add camera shake effect."""
+        self.shake_intensity = intensity
+        self.shake_duration = duration
+        self.shake_timer = 0.0
+    
+    def update_camera_shake(self):
+        """Update camera shake effect."""
+        if self.shake_timer < self.shake_duration:
+            self.shake_timer += 1.0 / config.FPS
+            
+            # Calculate shake offset
+            import random
+            shake_x = random.uniform(-self.shake_intensity, self.shake_intensity)
+            shake_y = random.uniform(-self.shake_intensity, self.shake_intensity)
+            
+            # Apply shake to camera
+            self.camera_x += shake_x
+            self.camera_y += shake_y
+        else:
+            self.shake_intensity = 0.0
