@@ -20,8 +20,8 @@ class Main:
         
         try:
             pygame.init()
-            # Use best available resolution
-            width, height = config.BEST_RESOLUTION
+            # Use display dimensions from config
+            width, height = config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT
             self.screen = pygame.display.set_mode((width, height))
             pygame.display.set_caption("Super-Sk8!")
             self.clock = pygame.time.Clock()
@@ -84,6 +84,7 @@ class Main:
                 # Update systems
                 self.input_handler.update()
                 self.control.update()
+                self.display.update_camera_shake()
                 
                 # Render
                 self.display.clear_screen()

@@ -95,10 +95,22 @@ class SoundManager:
                 return False
         return self.play_sound("success")
     
+    def play_fail_sound(self) -> bool:
+        """Play fail sound."""
+        if "fail" not in self.sounds:
+            fail_path = "SFX/Fail.mp3"
+            if os.path.exists(fail_path):
+                self.load_sound("fail", fail_path)
+            else:
+                print("Warning: Fail sound not found")
+                return False
+        return self.play_sound("fail")
+    
     def preload_common_sounds(self):
         """Preload commonly used sounds to prevent frame drops."""
         common_sounds = [
             ("success", "SFX/Success.mp3"),
+            ("fail", "SFX/Fail.mp3"),
         ]
         
         for name, path in common_sounds:

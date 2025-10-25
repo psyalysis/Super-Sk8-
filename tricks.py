@@ -14,11 +14,11 @@ class TrickManager:
         
         # Trick tracking
         self.current_trick = None
-        self.trick_start_frame = 0
-        self.trick_loop_count = 0
-        self.keys_released_after_loop = False
+        self.trick_start_time = 0
         self.trick_completed = False
         self.total_frames = 0
+        self.frame_duration = 0  # Duration of each frame in milliseconds
+        self.frames_elapsed = 0  # Track total frames since trick started
     
     def load_sounds(self):
         """Load sound effects."""
@@ -28,33 +28,43 @@ class TrickManager:
     def start_trick(self, trick_name):
         """Called when a trick animation starts."""
         self.current_trick = trick_name
-        self.trick_start_frame = self.display.animation_frame
-        self.trick_loop_count = 0
-        self.keys_released_after_loop = False
+        self.trick_start_time = pygame.time.get_ticks()
         self.trick_completed = False
-        self.last_frame = self.display.animation_frame
         self.total_frames = len(self.display.animation_frames) if self.display.animation_frames else 0
+        self.frame_duration = self.display.frame_duration
+        self.frames_elapsed = 0
     
     def update_trick_progress(self):
-        """Update trick progress and detect loop completion."""
+        """Update trick progress and detect failure at 1.5 loops."""
         if not self.current_trick or not self.display.animation_running:
             return
         
-        # Track when we complete a full loop by detecting frame 0 after starting
-        current_frame = self.display.animation_frame
+        # Increment frame counter each time this is called
+        self.frames_elapsed += 1
         
-        # If we're at frame 0 and we've been tracking this trick
-        if current_frame == 0 and self.trick_loop_count == 0:
-            # Check if we've moved from a non-zero frame to frame 0 (indicating loop completion)
-            if hasattr(self, 'last_frame') and self.last_frame > 0:
-                self.trick_loop_count = 1
-        elif current_frame == 0 and self.trick_loop_count > 0:
-            # Additional loops after the first one
-            if hasattr(self, 'last_frame') and self.last_frame > 0:
-                self.trick_loop_count += 1
+        # Calculate current trick progress
+        current_progress = self.get_trick_progress()
         
-        # Store current frame for next update
-        self.last_frame = current_frame
+        # Check for trick failure at 1.5 progress (1.5 loops)
+        if current_progress >= 1.5:
+            self.fail_trick()
+            return
+    
+    def get_trick_progress(self):
+        """Calculate how much of the trick animation has been completed."""
+        if not self.current_trick or self.total_frames == 0:
+            return 0.0
+        
+        # Use frames_elapsed to calculate progress
+        # frames_elapsed counts at 60 FPS, but animation runs at 30 FPS
+        # So we need to divide by 2 to get actual animation frames
+        actual_animation_frames = self.frames_elapsed / 2
+        
+        # 1.0 = exactly one complete loop
+        # 1.5 = one and a half loops
+        progress = actual_animation_frames / self.total_frames
+        
+        return progress
     
     def check_keys_released(self, keys_held):
         """Check if keys have been released and calculate score multiplier."""
@@ -70,61 +80,52 @@ class TrickManager:
         if not keys_released:
             return
         
-        current_frame = self.display.animation_frame
-        
-        # Calculate score multiplier based on landing timing
-        multiplier = self.calculate_score_multiplier(current_frame)
+        # Calculate score multiplier based on trick progress
+        multiplier = self.calculate_score_multiplier()
         
         if multiplier > 0:
             self.complete_trick(multiplier)
     
-    def calculate_score_multiplier(self, current_frame):
-        """Calculate score multiplier based on landing frame timing."""
-        # Perfect landing frames (4x multiplier):
-        # 1. Penultimate frame (second to last frame)
-        # 2. First frame on the 1st time looping (frame 0 after first loop)
-        # 3. Second frame on the 1st loop (frame 1 after first loop)
+    def calculate_score_multiplier(self):
+        """Calculate score multiplier based on trick progress."""
+        progress = self.get_trick_progress()
         
-        perfect_frames = []
-        
-        # Penultimate frame
-        if self.total_frames > 1:
-            perfect_frames.append(self.total_frames - 2)
-        
-        # First frame on 1st loop
-        if self.trick_loop_count == 1:
-            perfect_frames.extend([0, 1])
-        
-        # Check if current frame is perfect (4x multiplier)
-        if current_frame in perfect_frames:
+        # Perfect landing: exactly 1.0 progress (4x multiplier)
+        if 0.95 <= progress <= 1.05:  # Small tolerance for perfect timing
             return 4
         
-        # Check for adjacent frames (2x multiplier)
-        adjacent_frames = []
-        for perfect_frame in perfect_frames:
-            # Add frames before and after perfect frames
-            if perfect_frame > 0:
-                adjacent_frames.append(perfect_frame - 1)
-            if perfect_frame < self.total_frames - 1:
-                adjacent_frames.append(perfect_frame + 1)
-        
-        if current_frame in adjacent_frames:
+        # Great landing: close to perfect (2x multiplier)
+        elif 0.85 <= progress <= 1.15:
             return 2
         
-        # Check for frames 2 away (1x multiplier)
-        two_away_frames = []
-        for perfect_frame in perfect_frames:
-            # Add frames 2 before and 2 after perfect frames
-            if perfect_frame >= 2:
-                two_away_frames.append(perfect_frame - 2)
-            if perfect_frame <= self.total_frames - 3:
-                two_away_frames.append(perfect_frame + 2)
-        
-        if current_frame in two_away_frames:
+        # Good landing: reasonable timing (1x multiplier)
+        elif 0.7 <= progress <= 1.3:
             return 1
         
-        # No multiplier for other frames
-        return 0
+        # Too early or too late: no multiplier
+        else:
+            return 0
+    
+    def fail_trick(self):
+        """Fail the trick due to timing miss."""
+        if self.trick_completed:
+            return
+        
+        self.trick_completed = True
+        
+        # Show fail message in UI
+        if self.ui and self.current_trick:
+            self.ui.show_trick_fail(self.current_trick)
+        
+        # Show red board feedback
+        self.display.show_board_color_feedback('red')
+        
+        # Play fail sound
+        if self.sound_manager:
+            self.sound_manager.play_fail_sound()
+        
+        # Log trick failure
+        print(f"Trick failed: {self.current_trick} - Missed timing (1.5 loops)")
     
     def complete_trick(self, multiplier=1):
         """Complete the trick and play success sound."""
@@ -145,7 +146,10 @@ class TrickManager:
         if self.ui:
             self.ui.show_trick_success(self.current_trick, final_score)
         
-        self.display.level.add_camera_shake(2.0, 0.2)
+        # Show green board feedback
+        self.display.show_board_color_feedback('green')
+        
+        self.display.add_camera_shake(2.0, 0.2)
         
         # Log successful trick completion with score info
         multiplier_text = {4: "PERFECT", 2: "GREAT", 1: "GOOD"}
@@ -154,12 +158,11 @@ class TrickManager:
     def reset_trick(self):
         """Reset trick tracking."""
         self.current_trick = None
-        self.trick_start_frame = 0
-        self.trick_loop_count = 0
-        self.keys_released_after_loop = False
+        self.trick_start_time = 0
         self.trick_completed = False
-        self.last_frame = 0
         self.total_frames = 0
+        self.frame_duration = 0
+        self.frames_elapsed = 0
     
     def get_trick_score(self, trick_name):
         """Get score for a completed trick."""
@@ -187,14 +190,13 @@ class TrickManager:
             return None
         
         base_score = self.get_trick_score(self.current_trick)
-        current_frame = self.display.animation_frame
-        multiplier = self.calculate_score_multiplier(current_frame)
+        progress = self.get_trick_progress()
+        multiplier = self.calculate_score_multiplier()
         
         return {
             'trick_name': self.current_trick,
             'base_score': base_score,
             'multiplier': multiplier,
-            'current_frame': current_frame,
-            'total_frames': self.total_frames,
-            'loop_count': self.trick_loop_count
+            'progress': progress,
+            'total_frames': self.total_frames
         }

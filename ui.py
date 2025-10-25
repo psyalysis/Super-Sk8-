@@ -20,7 +20,7 @@ class UI:
              self.button.get_height() * self.button_scale)
         )
         
-        icon_scale = self.button.get_height() * self.button_scale * 0.9
+        icon_scale = self.button.get_height() * self.button_scale * 0.7
         self.scaled_play_icon = pygame.transform.scale(self.play_icon, (icon_scale, icon_scale))
         self.scaled_settings_icon = pygame.transform.scale(self.settings_icon, (icon_scale, icon_scale))
         
@@ -28,6 +28,9 @@ class UI:
         self.current_trick_display = None
         self.trick_display_duration = 2000  # 2 seconds
         self.trick_display_start_time = 0
+        
+        # Track last trick display position for feedback centering
+        self.last_trick_display_pos = None
         
         # Load bold font for trick display
         self.trick_font = self.display.resource_manager.load_font(config.FONT_BOLD_PATH, config.FONT_SIZE_MEDIUM)
@@ -37,16 +40,12 @@ class UI:
         self.current_combo = 0
         self.max_combo = 0
         self.combo_start_time = 0
-        self.combo_duration = 3000  # 3 seconds to maintain combo
+        self.combo_duration = 5*1000  # 5 seconds to maintain combo
         
-        # Load fonts for UI elements with scaling
-        scaled_large_size = int(config.FONT_SIZE_LARGE * config.SCALE_FACTOR)
-        scaled_medium_size = int(config.FONT_SIZE_MEDIUM * config.SCALE_FACTOR)
-        scaled_small_size = int(config.FONT_SIZE_SMALL * config.SCALE_FACTOR)
-        
-        self.score_font = self.display.resource_manager.load_font(config.FONT_BOLD_PATH, scaled_large_size)
-        self.combo_font = self.display.resource_manager.load_font(config.FONT_PATH, scaled_small_size)
-        self.trick_font = self.display.resource_manager.load_font(config.FONT_BOLD_PATH, scaled_medium_size)
+        # Load fonts for UI elements
+        self.score_font = self.display.resource_manager.load_font(config.FONT_BOLD_PATH, config.FONT_SIZE_LARGE)
+        self.combo_font = self.display.resource_manager.load_font(config.FONT_PATH, config.FONT_SIZE_SMALL)
+        self.trick_font = self.display.resource_manager.load_font(config.FONT_BOLD_PATH, config.FONT_SIZE_MEDIUM)
         
         # Visual feedback system
         self.feedback_effects = []
@@ -56,7 +55,7 @@ class UI:
         screen = self.display.screen
         width, height = screen.get_size()
         horizontal_center = width // 2
-        horizontal_offset = 400
+        horizontal_offset = 0 #400
 
         # Use pre-scaled button dimensions
         scaled_button_width = self.scaled_button.get_width()
@@ -68,7 +67,7 @@ class UI:
         if self.bob_frame > 20:
             self.bob_frame = 0
 
-        bob_offset = 5 if self.bob_frame > 10 else -5
+        bob_offset = 7 if self.bob_frame > 10 else -7
 
         button_x = horizontal_center - scaled_button_width // 2 + horizontal_offset
 
@@ -109,6 +108,7 @@ class UI:
             'type': 'start'
         }
         self.trick_display_start_time = pygame.time.get_ticks()
+        self.last_trick_display_pos = None  # Will be set on drawing
     
     def show_trick_success(self, trick_name, score):
         """Show trick name and score in green for successful landing."""
@@ -118,16 +118,13 @@ class UI:
             'type': 'success'
         }
         self.trick_display_start_time = pygame.time.get_ticks()
+        self.last_trick_display_pos = None  # Make sure to recalculate
         
         # Update score and combo
         self.add_score(score)
         self.increment_combo()
         
-        # Add visual feedback effect
-        screen = self.display.screen
-        width, height = screen.get_size()
-        feedback_position = (width // 2, height // 2 - 100)
-        
+        # We will calculate feedback position based on trick name position in draw_trick_display
         # Choose feedback text and color based on score
         if score >= 400:  # Perfect landing
             feedback_text = "PERFECT!"
@@ -141,8 +138,9 @@ class UI:
         else:  # Basic landing
             feedback_text = "OK"
             feedback_color = config.COLORS['white']
-        
-        self.add_feedback_effect(feedback_text, feedback_color, feedback_position, "large")
+
+        # Add a tag so position can be set in draw_feedback_effects
+        self.add_feedback_effect(feedback_text, feedback_color, None, "large", tag="trick_feedback")
     
     def show_trick_fail(self, trick_name):
         """Show trick name in red for failed landing."""
@@ -152,15 +150,13 @@ class UI:
             'type': 'fail'
         }
         self.trick_display_start_time = pygame.time.get_ticks()
+        self.last_trick_display_pos = None
         
         # Reset combo on failure
         self.reset_combo()
         
-        # Add visual feedback effect for failure
-        screen = self.display.screen
-        width, height = screen.get_size()
-        feedback_position = (width // 2, height // 2 - 100)
-        self.add_feedback_effect("FAIL!", config.COLORS['danger'], feedback_position, "large")
+        # Add visual feedback effect for failure (will center above trick name)
+        self.add_feedback_effect("FAIL!", config.COLORS['danger'], None, "large", tag="trick_feedback")
     
     def update_trick_display(self):
         """Update trick display timer and clear if expired."""
@@ -168,6 +164,7 @@ class UI:
             current_time = pygame.time.get_ticks()
             if current_time - self.trick_display_start_time > self.trick_display_duration:
                 self.current_trick_display = None
+                self.last_trick_display_pos = None
         
         # Update combo timer
         self.update_combo_timer()
@@ -212,14 +209,15 @@ class UI:
     def draw_trick_display(self):
         """Draw current trick display in bottom middle of screen."""
         if not self.current_trick_display:
+            self.last_trick_display_pos = None
             return
         
         screen = self.display.screen
         width, height = screen.get_size()
         
-        # Position in bottom middle with scaling
+        # Position in bottom middle
         x = width // 2
-        y = height - int(60 * config.SCALE_FACTOR)
+        y = height - 60
         
         # Render text with drop shadow
         text = self.current_trick_display['text']
@@ -236,22 +234,25 @@ class UI:
         # Draw shadow first, then main text
         screen.blit(shadow_surface, shadow_rect)
         screen.blit(text_surface, text_rect)
+
+        # Save this position for trick feedback to reference
+        self.last_trick_display_pos = (x, y)
     
     def draw_score_display(self):
         """Draw score display in top left corner."""
         screen = self.display.screen
         
-        # Score text with scaled positioning
+        # Score text
         score_text = f"Score: {self.total_score:,}"
         score_surface = self.score_font.render(score_text, True, config.COLORS['white'])
-        score_x = int(20 * config.SCALE_FACTOR)
-        score_y = int(20 * config.SCALE_FACTOR)
+        score_x = 20
+        score_y = 20
         score_rect = score_surface.get_rect(topleft=(score_x, score_y))
         
-        # Draw shadow with scaled positioning
+        # Draw shadow
         shadow_surface = self.score_font.render(score_text, True, config.COLORS['black'])
-        shadow_x = int(22 * config.SCALE_FACTOR)
-        shadow_y = int(22 * config.SCALE_FACTOR)
+        shadow_x = 22
+        shadow_y = 22
         shadow_rect = shadow_surface.get_rect(topleft=(shadow_x, shadow_y))
         
         screen.blit(shadow_surface, shadow_rect)
@@ -277,14 +278,14 @@ class UI:
             combo_color = config.COLORS['white']    # White for low combos
         
         combo_surface = self.combo_font.render(combo_text, True, combo_color)
-        combo_x = width - int(20 * config.SCALE_FACTOR)
-        combo_y = int(20 * config.SCALE_FACTOR)
+        combo_x = width - 20
+        combo_y = 20
         combo_rect = combo_surface.get_rect(topright=(combo_x, combo_y))
         
-        # Draw shadow with scaled positioning
+        # Draw shadow
         shadow_surface = self.combo_font.render(combo_text, True, config.COLORS['black'])
-        shadow_x = width - int(18 * config.SCALE_FACTOR)
-        shadow_y = int(22 * config.SCALE_FACTOR)
+        shadow_x = width - 18
+        shadow_y = 22
         shadow_rect = shadow_surface.get_rect(topright=(shadow_x, shadow_y))
         
         screen.blit(shadow_surface, shadow_rect)
@@ -296,15 +297,16 @@ class UI:
         self.draw_combo_display()
         self.draw_feedback_effects()
     
-    def add_feedback_effect(self, text, color, position, size="medium"):
+    def add_feedback_effect(self, text, color, position, size="medium", tag=None):
         """Add a visual feedback effect."""
         effect = {
             'text': text,
             'color': color,
-            'position': position,
+            'position': position,  # Can be None; for trick feedback this will be set dynamically
             'size': size,
             'start_time': pygame.time.get_ticks(),
-            'alpha': 255
+            'alpha': 255,
+            'tag': tag
         }
         self.feedback_effects.append(effect)
     
@@ -332,14 +334,36 @@ class UI:
             else:
                 font = self.trick_font
             
+            # Determine position for feedback
+            x, y = 0, 0
+            if effect.get('tag') == "trick_feedback":
+                # Center horizontally, and place 60px above the trick name display
+                # Use the last known trick name display position, else fall back to old system
+                if self.last_trick_display_pos is not None:
+                    x = self.last_trick_display_pos[0]
+                    y = self.last_trick_display_pos[1] - 60
+                else:
+                    # Fallback: center horizontally, 130px from bottom
+                    width, height = self.display.screen.get_size()
+                    x = width // 2
+                    # Keep y as old y (height - 130)
+                    y = height - 130
+            else:
+                # Use stored position (for e.g. combo feedback)
+                pos = effect['position']
+                if pos is None:
+                    width, height = self.display.screen.get_size()
+                    x = width // 2
+                    y = height // 2
+                else:
+                    x, y = pos
+
+            # Move up as it fades
+            y -= int(fade_progress * 50)  # Move up 50 pixels over time
+            
             # Create surface with alpha
             text_surface = font.render(effect['text'], True, effect['color'])
             text_surface.set_alpha(alpha)
-            
-            # Position effect (move up as it fades)
-            x, y = effect['position']
-            y -= int(fade_progress * 50)  # Move up 50 pixels over time
-            
             self.display.screen.blit(text_surface, (x, y))
         
         # Remove expired effects

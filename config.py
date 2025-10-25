@@ -23,26 +23,16 @@ SUPPORTED_RESOLUTIONS = [
     (1920, 1080),  # 16:9
 ]
 
-DISPLAY_WIDTH = 1600
-DISPLAY_HEIGHT = 900
+DISPLAY_WIDTH = 900
+DISPLAY_HEIGHT = 675
 FPS = 60
-
-# Use the specified display dimensions
-BEST_RESOLUTION = (DISPLAY_WIDTH, DISPLAY_HEIGHT)
-
-# Calculate scaling factors
-BASE_WIDTH = 1200
-BASE_HEIGHT = 675
-SCALE_X = BEST_RESOLUTION[0] / BASE_WIDTH
-SCALE_Y = BEST_RESOLUTION[1] / BASE_HEIGHT
-SCALE_FACTOR = min(SCALE_X, SCALE_Y)  # Uniform scaling
 
 # --- Texture settings ---
 FLOOR_TEXTURES_PATH = "./objects/"
 
 # --- Camera settings ---
-CAMERA_ZOOM = 2
-CAMERA_SPEED = 8
+CAMERA_ZOOM = 1.25
+CAMERA_SPEED = 6
 
 # --- Colors ---
 COLORS = {
@@ -60,15 +50,15 @@ COLORS = {
 
 # --- Animation settings ---
 ANIMATIONS = "animations/"
-ANIMATION_FRAME_RATE = 24
+ANIMATION_FRAME_RATE = 30
 
 # --- Sound settings ---
 SOUND_PATHS = {
     "land": "SFX/land_",
     "pop": "SFX/pop_"
 }
-SOUND_VOLUME = 0.6
-MASTER_VOLUME = 1.0  # Master volume control
+SOUND_VOLUME = 0.1
+MASTER_VOLUME = 0.1
 
 # --- Key mappings ---
 import pygame

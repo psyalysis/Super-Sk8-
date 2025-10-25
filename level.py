@@ -15,128 +15,91 @@ class Level:
         
         self.load_textures()
         
-        # Camera system
+        # Camera position for shake
         self.camera_x = 0.0
         self.camera_y = 0.0
-        self.target_camera_x = 0.0
-        self.target_camera_y = 0.0
-        self.camera_smoothness = 0.1  # How smoothly camera follows target
         
-        # Camera shake system
-        self.shake_intensity = 0.0
-        self.shake_duration = 0.0
-        self.shake_timer = 0.0
+        # Chunk size system
+        self.chunk_width = 32*8
+        self.chunk_height = 32*4
+        self.chunk_spacing = 32*8 * self.zoom - 1
+        self.scroll_speed = config.CAMERA_SPEED
         
-        # Chunk system
-        self.chunk_size = 8
+        # Queue-based chunk system
+        self.chunk_queue = []
+        
+        # Calculate number of chunks to fill the view (+1 for safety)
+        self.max_chunks = int(config.DISPLAY_WIDTH / (self.chunk_spacing * self.zoom)) + 2
+        
+        # Loaded chunks dictionary
         self.loaded_chunks = {}
-        self.chunk_load_distance = 6
+        self.init_chunk_queue()
         
-        # Viewport bounds
-        self.viewport_width = config.DISPLAY_WIDTH // config.CAMERA_ZOOM
-        self.viewport_height = config.DISPLAY_HEIGHT // config.CAMERA_ZOOM
-        
-        self.update_chunks()
 
     def load_textures(self):
         self.floor_texture_location = config.FLOOR_TEXTURES_PATH
         
-        self.Tile1 = self.resource_manager.load_texture(self.floor_texture_location + "Tile1.png", self.zoom)
-        self.Tile2 = self.resource_manager.load_texture(self.floor_texture_location + "Tile2.png", self.zoom)
-        self.Tile3 = self.resource_manager.load_texture(self.floor_texture_location + "Tile3.png", self.zoom)
+        # Load the chunk.png image instead of individual tiles
+        self.chunk_texture = self.resource_manager.load_texture(self.floor_texture_location + "chunk.png", self.zoom)
         
+        # Keep stair tiles for potential future use
         self.StairTile1 = self.resource_manager.load_texture(self.floor_texture_location + "StairTile1.png", self.zoom)
         self.StairTile2 = self.resource_manager.load_texture(self.floor_texture_location + "StairTile2.png", self.zoom)
+    
+    def init_chunk_queue(self):
+        """Initialize chunk queue with fixed start position"""
+        # Start position for chunks
+        start_x = 0
+        start_y = 0
+        
+        for i in range(self.max_chunks):
+            x = start_x + (i * self.chunk_spacing)
+            y = start_y + (i * (self.chunk_spacing // 2))
+            self.chunk_queue.append((x, y))
+            self.loaded_chunks[i] = [(self.chunk_texture, x, y)]
                    
     def draw_level(self):
-        for chunk_key, tiles in self.loaded_chunks.items():
-            for tile_data in tiles:
-                tile_texture, tile_x, tile_y = tile_data
-                screen_x = tile_x + self.camera_x
-                screen_y = tile_y + self.camera_y
+        """Draw level chunks"""
+        # Get camera shake offset from display
+        shake_x, shake_y = self.display.get_camera_shake_offset()
+        
+        for chunk_data in self.loaded_chunks.values():
+            chunk_texture, chunk_x, chunk_y = chunk_data[0]
+            self.display.screen.blit(chunk_texture, 
+                                   (chunk_x + self.camera_x + shake_x, chunk_y + self.camera_y + shake_y))
+        
+    def cycle_chunks(self):
+        """Conveyor belt system - chunks move diagonally in isometric direction"""
+        # Move all chunks in isometric direction (to the left and upward (half the speed))
+        move_x = -self.scroll_speed  # X Movement
+        move_y = -self.scroll_speed / 2  # Y Movement
+        
+        # Update chunk positions
+        for i in range(len(self.chunk_queue)):
+            x, y = self.chunk_queue[i]
+            new_x = x + move_x
+            new_y = y + move_y
+            
+            #If chunk has moved enough distance, reposition to the start
+            #Slightly more than 1 full chunk space to avoid seeing chunks unload
+            if new_x < -(self.chunk_spacing * 1.5): 
+                # Move chunk to the right side (end of queue)
+                last_chunk_x, last_chunk_y = self.chunk_queue[-1]
+                new_x = last_chunk_x + self.chunk_spacing
+                new_y = last_chunk_y + (self.chunk_spacing // 2)
                 
-                if (screen_x > -64 and screen_x < config.DISPLAY_WIDTH + 64 and 
-                    screen_y > -64 and screen_y < config.DISPLAY_HEIGHT + 64):
-                    self.display.screen.blit(tile_texture, (screen_x, screen_y))
+                # Remove from current position and add to end
+                self.chunk_queue.pop(i)
+                self.chunk_queue.append((new_x, new_y))
+            else:
+                # Update position normally
+                self.chunk_queue[i] = (new_x, new_y)
         
-    def get_camera_chunk_coords(self):
-        approximate_row = int(-self.camera_x / (16 * self.zoom))
-        chunk_x = approximate_row // self.chunk_size
-        chunk_y = 0
-        return chunk_x, chunk_y
-    
-    def create_chunk(self, chunk_x, chunk_y):
-        tiles = []
-        start_row = chunk_x * self.chunk_size
-        
-        for local_x in range(self.chunk_size):
-            row = start_row + local_x
-            for local_y in range(self.chunk_size):
-                tile = self.Tile2 if (row + local_y) % 2 == 0 else self.Tile3
-                
-                px = ((row * 16 - local_y * 16) * self.zoom) - 150
-                py = (row * 8 + local_y * 8) * self.zoom
-                
-                tiles.append((tile, px, py))
-        
-        return tiles
-    
-    def update_chunks(self):
-        camera_chunk_x, camera_chunk_y = self.get_camera_chunk_coords()
-        
-        chunks_to_load = set()
-        for dx in range(-self.chunk_load_distance, self.chunk_load_distance + 1):
-            chunk_x = camera_chunk_x + dx
-            chunk_y = camera_chunk_y
-            chunks_to_load.add((chunk_x, chunk_y))
-        
-        chunks_to_remove = []
-        for chunk_key in self.loaded_chunks.keys():
-            if chunk_key not in chunks_to_load:
-                chunks_to_remove.append(chunk_key)
-        
-        for chunk_key in chunks_to_remove:
-            del self.loaded_chunks[chunk_key]
-        
-        for chunk_x, chunk_y in chunks_to_load:
-            chunk_key = (chunk_x, chunk_y)
-            if chunk_key not in self.loaded_chunks:
-                self.loaded_chunks[chunk_key] = self.create_chunk(chunk_x, chunk_y)
+        # Update loaded chunks with new positions
+        for i, (x, y) in enumerate(self.chunk_queue):
+            self.loaded_chunks[i] = [(self.chunk_texture, x, y)]
         
     def update_camera(self):
-        camera_speed = config.CAMERA_SPEED
-        
-        # Update target camera position
-        self.target_camera_x -= camera_speed
-        self.target_camera_y -= camera_speed / 2
-        
-        # Smooth camera interpolation
-        self.camera_x += (self.target_camera_x - self.camera_x) * self.camera_smoothness
-        self.camera_y += (self.target_camera_y - self.camera_y) * self.camera_smoothness
-        
-        # Update camera shake
-        self.update_camera_shake()
-        
-        self.update_chunks()
-    
-    def add_camera_shake(self, intensity, duration):
-        """Add camera shake effect."""
-        self.shake_intensity = intensity
-        self.shake_duration = duration
-        self.shake_timer = 0.0
-    
-    def update_camera_shake(self):
-        """Update camera shake effect."""
-        if self.shake_timer < self.shake_duration:
-            self.shake_timer += 1.0 / config.FPS
-            
-            # Calculate shake offset
-            import random
-            shake_x = random.uniform(-self.shake_intensity, self.shake_intensity)
-            shake_y = random.uniform(-self.shake_intensity, self.shake_intensity)
-            
-            # Apply shake to camera
-            self.camera_x += shake_x
-            self.camera_y += shake_y
-        else:
-            self.shake_intensity = 0.0
+        """Update camera - chunks move continuously"""
+        # Camera stays fixed, chunks move every frame
+        self.cycle_chunks()

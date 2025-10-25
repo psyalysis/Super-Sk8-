@@ -105,7 +105,7 @@ class ResourceManager:
                 spritemap = self.load_texture(spritemap_path)
                 if spritemap:
                     # Extract and cache frames
-                    frames = self.extract_animation_frames(spritemap, config.CAMERA_ZOOM)
+                    frames = self.extract_animation_frames(spritemap, config.CAMERA_ZOOM * 2)
                     self.animation_frames_cache[trick_name] = frames
         
         return self.animation_frames_cache

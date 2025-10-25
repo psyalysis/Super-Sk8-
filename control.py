@@ -53,6 +53,19 @@ class Control:
         # Update trick progress
         self.trick_manager.update_trick_progress()
         
+        # Check if trick failed due to timing (1.5 loops)
+        if (self.trick_manager.current_trick and 
+            self.trick_manager.trick_completed and 
+            self.state_manager.is_player_airborne()):
+            # Trick failed automatically - end the trick
+            self.state_manager.end_trick()
+            self.display.stop_animation()
+            self.trick_manager.reset_trick()
+            
+            # Play landing sound using sound manager
+            if self.sound_manager:
+                self.sound_manager.play_land_sound()
+        
         # Update UI trick display
         if self.ui:
             self.ui.update_trick_display()
@@ -125,6 +138,9 @@ class Control:
                 # Trick failed - show fail message
                 if self.ui and self.trick_manager.current_trick:
                     self.ui.show_trick_fail(self.trick_manager.current_trick)
+                
+                # Show red board feedback
+                self.display.show_board_color_feedback('red')
             
             self.state_manager.end_trick()
             self.display.stop_animation()
@@ -166,6 +182,9 @@ class Control:
         if action == 'enter':
             # Start the game
             self.state_manager.start_game()
+            # Show skateboard and trigger camera shake
+            self.display.show_skateboard()
+            self.display.add_camera_shake(5.0, 0.5)  # Intensity 5, duration 0.5 seconds
             print("Game started!")
         elif action == 'escape':
             # Exit the game
