@@ -2,7 +2,6 @@
 
 import pygame
 
-# Trick scoring constants
 TRICK_SCORES = {
     "Kickflip": 100,
     "Heelflip": 100,
@@ -16,7 +15,6 @@ TRICK_SCORES = {
     "360 Inward Heelflip": 300,
     "Tre Flip": 250,
     "Lazer Flip": 250,
-    # Grind tricks
     "50-50 Grind": 150,
     "5-0 Grind": 150,
     "Nose Grind": 150,
@@ -34,7 +32,6 @@ TRICK_SCORES = {
     "Lipslide": 250,
 }
 
-# Scoring thresholds
 PERFECT_RANGE = (0.95, 1.05)
 GREAT_RANGE = (0.85, 1.15)
 GOOD_RANGE = (0.7, 1.3)
@@ -49,7 +46,6 @@ class TrickManager:
         self.ui = ui
         self.sound_manager = sound_manager
         
-        # Trick tracking
         self.current_trick = None
         self.trick_start_time = 0
         self.trick_completed = False
@@ -58,7 +54,6 @@ class TrickManager:
         self.frames_elapsed = 0
     
     def start_trick(self, trick_name):
-        """Called when a trick animation starts."""
         self.current_trick = trick_name
         self.trick_start_time = pygame.time.get_ticks()
         self.trick_completed = False
@@ -67,7 +62,6 @@ class TrickManager:
         self.frames_elapsed = 0
     
     def update_trick_progress(self):
-        """Update trick progress and detect failure at 1.5 loops."""
         if not self.current_trick or not self.display.animation_running:
             return
         
@@ -77,27 +71,20 @@ class TrickManager:
             self.fail_trick()
     
     def get_trick_progress(self):
-        """Calculate how much of the trick animation has been completed."""
         if not self.current_trick or self.total_frames == 0:
             return 0.0
-        
         return (self.frames_elapsed / 2) / self.total_frames
     
     def check_keys_released(self, keys_held):
-        """Check if keys have been released and complete trick if valid."""
         if self.trick_completed or not self.current_trick:
             return
         
-        left_key = keys_held[0][0] if keys_held[0][0] != "none" else "none"
-        right_key = keys_held[1][0] if keys_held[1][0] != "none" else "none"
-        
-        if left_key == "none" and right_key == "none":
+        if keys_held[0][0] == "none" and keys_held[1][0] == "none":
             multiplier = self.calculate_score_multiplier()
             if multiplier > 0:
                 self.complete_trick(multiplier)
     
     def calculate_score_multiplier(self):
-        """Calculate score multiplier based on trick progress."""
         progress = self.get_trick_progress()
         
         if PERFECT_RANGE[0] <= progress <= PERFECT_RANGE[1]:
@@ -109,7 +96,6 @@ class TrickManager:
         return 0
     
     def fail_trick(self):
-        """Fail the trick due to timing miss."""
         if self.trick_completed:
             return
         
@@ -124,7 +110,6 @@ class TrickManager:
             self.sound_manager.play_fail_sound()
     
     def complete_trick(self, multiplier=1):
-        """Complete the trick and play success sound."""
         if self.trick_completed:
             return
         
@@ -140,10 +125,8 @@ class TrickManager:
             self.ui.show_trick_success(self.current_trick, final_score)
         
         self.display.show_board_color_feedback('green')
-        self.display.add_camera_shake(2.0, 0.2)
     
     def reset_trick(self):
-        """Reset trick tracking."""
         self.current_trick = None
         self.trick_start_time = 0
         self.trick_completed = False
@@ -152,20 +135,4 @@ class TrickManager:
         self.frames_elapsed = 0
     
     def get_trick_score(self, trick_name):
-        """Get score for a completed trick."""
-        return TRICK_SCORES.get(trick_name, 50)
-    
-    def get_current_score_info(self):
-        """Get current trick score information for display."""
-        if not self.current_trick:
-            return None
-        
-        base_score = self.get_trick_score(self.current_trick)
-        
-        return {
-            'trick_name': self.current_trick,
-            'base_score': base_score,
-            'multiplier': self.calculate_score_multiplier(),
-            'progress': self.get_trick_progress(),
-            'total_frames': self.total_frames
-        }
+        return TRICK_SCORES.get(trick_name, 50)  # Removed: get_current_score_info() method (unused)

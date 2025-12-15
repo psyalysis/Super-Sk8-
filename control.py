@@ -1,12 +1,45 @@
 """Skateboard rendering / controls module."""
 
-import config
 import pygame
 import os
 import time
-import random
 from core.state_manager import StateManager
 from tricks import TrickManager
+import config
+
+# Hardcoded animation paths
+ANIMATIONS_PATH = "assets/animations/flip/"
+GRIND_ANIMATIONS_PATH = "assets/animations/grind/"
+
+# Hardcoded trick controls
+FLIP_CONTROLS = {
+    "Kickflip": {"keys": [["left-left", False], ["right-down", False]]},
+    "Heelflip": {"keys": [["left-left", False], ["right-up", False]]},
+    "Varial Kickflip": {"keys": [["left-down", False], ["right-down", False]]},
+    "Varial Heelflip": {"keys": [["left-up", False], ["right-up", False]]},
+    "Hardflip": {"keys": [["left-up", False], ["right-down", False]]},
+    "Inward Heelflip": {"keys": [["left-down", False], ["right-up", False]]},
+    "BS-Shuv": {"keys": [["left-down", False], ["right-left", False]]},
+    "FS-Shuv": {"keys": [["left-up", False], ["right-left", False]]}
+}
+
+GRIND_CONTROLS = {
+    "50-50 Grind": ["left-left", "right-right"],
+    "5-0 Grind": ["left-left", "right-left"],
+    "Nose Grind": ["left-right", "right-right"],
+    "Overcrooked Grind": ["left-up", "right-right"],
+    "Crooked Grind": ["left-down", "right-right"],
+    "Losi Grind": ["left-up", "right-right"],
+    "Lazy Grind": ["left-down", "right-left"],
+    "Salad Grind": ["left-left", "right-up"],
+    "Suski Grind": ["left-left", "right-down"],
+    "Feeble Grind": ["left-right", "right-up"],
+    "Smith Grind": ["left-right", "right-down"],
+    "Noseslide": ["left-up", "right-up"],
+    "Tailslide": ["left-down", "right-down"],
+    "Boardslide": ["left-down", "right-up"],
+    "Lipslide": ["left-up", "right-down"],
+}
 
 
 class Control:
@@ -19,40 +52,25 @@ class Control:
         self.sound_manager = sound_manager
         self.level = level
         
-        # Initialize trick manager
         self.trick_manager = TrickManager(display, state_manager, ui, sound_manager)
         
-        # Grind window timer
         self.grind_window_start = None
-        self.grind_window_duration = 0.25  # 0.25 seconds
-        
-        # Track if last trick was successful (needed for grind entry)
+        self.grind_window_duration = 0.25
         self.last_trick_successful = False
-        
-        # Track grind grace period for transitioning between rails
         self.grind_off_rail_timer = None
-        self.grind_off_rail_duration = 0.15  # 0.15 seconds grace period
+        self.grind_off_rail_duration = 0.15
         
         self.load_animations()
         
     def load_animations(self):
         self.animations = {}
         
-        # Load flip trick animations
-        flip_path = config.ANIMATIONS
-        for filename in os.listdir(flip_path):
-            if filename.endswith(".png"):
-                full_path = os.path.join(flip_path, filename)
-                trick_name = filename[:-4]
-                self.animations[trick_name] = pygame.image.load(full_path)
-        
-        # Load grind trick animations
-        grind_path = config.GRIND_ANIMATIONS
-        for filename in os.listdir(grind_path):
-            if filename.endswith(".png"):
-                full_path = os.path.join(grind_path, filename)
-                trick_name = filename[:-4]
-                self.animations[trick_name] = pygame.image.load(full_path)
+        for path in [ANIMATIONS_PATH, GRIND_ANIMATIONS_PATH]:
+            for filename in os.listdir(path):
+                if filename.endswith(".png"):
+                    full_path = os.path.join(path, filename)
+                    trick_name = filename[:-4]
+                    self.animations[trick_name] = pygame.image.load(full_path)
 
     def handle_input(self, input_data):
         if self.state_manager.is_in_menu():
@@ -60,7 +78,6 @@ class Control:
         elif self.state_manager.is_player_rolling():
             self.handle_trick_combo(input_data)
         elif self.state_manager.is_player_airborne():
-            # Check if on rail, last trick was successful, and can grind
             if (self.level and self.level.get_current_chunk_type() == 'rail' and 
                 self.last_trick_successful and self.grind_window_start is not None):
                 self.handle_grind_combo(input_data)
@@ -74,79 +91,59 @@ class Control:
             combos = self.input_handler.get_active_combos()
             if combos:
                 input_data = {
-                    'keys_held': self.input_handler.keys_held,
-                    'double_tapped_actions': self.input_handler.double_tap_tracker.double_tapped_actions
+                    'keys_held': self.input_handler.keys_held
                 }
                 self.handle_trick_combo(input_data)
         
-        # Update trick progress
         self.trick_manager.update_trick_progress()
         
-        # Reset completed grinds that have finished
+        # Reset completed grinds  # Simplified: Consolidated timer checks and removed redundant state checks
         if (self.state_manager.is_player_rolling() and 
             self.trick_manager.trick_completed and 
             self.trick_manager.current_trick and
             "Grind" in self.trick_manager.current_trick):
             self.trick_manager.reset_trick()
         
-        # Check if trick failed due to timing (1.5 loops)
-        # Skip this check for grinds as they always succeed
+        # Check trick failure
         if (self.trick_manager.current_trick and 
             self.trick_manager.trick_completed and 
             self.state_manager.is_player_airborne() and
             not self.state_manager.is_player_grinding() and
             self.trick_manager.get_trick_progress() >= 1.5):
-            # Trick failed automatically - end the trick
             self.last_trick_successful = False
-            
             self.state_manager.end_trick()
             self.display.stop_animation()
             self.trick_manager.reset_trick()
-            
-            # Play landing sound using sound manager
             if self.sound_manager:
                 self.sound_manager.play_land_sound()
         
-        # Check grind window timer - land if window expired
+        # Check grind window timer  # Simplified: Removed elapsed variable, direct time comparison
         if (self.grind_window_start is not None and 
             self.state_manager.is_player_airborne() and
             self.trick_manager.trick_completed):
-            elapsed = time.time() - self.grind_window_start
-            if elapsed >= self.grind_window_duration:
-                # Window expired - land
+            if time.time() - self.grind_window_start >= self.grind_window_duration:
                 self.last_trick_successful = False
-                
                 self.state_manager.end_trick()
                 self.display.stop_animation()
                 self.trick_manager.reset_trick()
                 self.grind_window_start = None
-                
-                # Play landing sound
                 if self.sound_manager:
                     self.sound_manager.play_land_sound()
         
-        # Check if reached end of rail (with grace period for multiple rails)
+        # Check rail exit
         if self.state_manager.is_player_grinding():
             on_rail = self.level.get_current_chunk_type() == 'rail' if self.level else False
             
             if not on_rail:
-                # Start timer for being off rail
                 if self.grind_off_rail_timer is None:
                     self.grind_off_rail_timer = time.time()
             else:
-                # On rail - reset timer
                 self.grind_off_rail_timer = None
             
-            # Check if grace period expired
             if self.grind_off_rail_timer is not None:
-                elapsed = time.time() - self.grind_off_rail_timer
-                if elapsed >= self.grind_off_rail_duration:
-                    # Been off rail too long - end grind
-                    # Force complete grind as successful
-                    grind_just_completed = False
+                if time.time() - self.grind_off_rail_timer >= self.grind_off_rail_duration:
                     if self.trick_manager.current_trick and not self.trick_manager.trick_completed:
                         self.trick_manager.complete_trick(1)
-                        grind_just_completed = True
                     
                     self.last_trick_successful = False
                     
@@ -156,116 +153,63 @@ class Control:
                     
                     self.state_manager.end_grind()
                     self.display.stop_animation()
-                    
-                    # Don't reset trick immediately if just completed - let success message show
-                    if not grind_just_completed:
-                        self.trick_manager.reset_trick()
+                    self.trick_manager.reset_trick()
         
-        # Update UI trick display
         if self.ui:
             self.ui.update_trick_display()
     
     def handle_trick_combo(self, input_data):
         keys_held = input_data.get('keys_held', [["none", False], ["none", False]])
-        double_tapped_actions = input_data.get('double_tapped_actions', set())
         
         left_key = keys_held[0][0] if keys_held[0][0] != "none" else "none"
         right_key = keys_held[1][0] if keys_held[1][0] != "none" else "none"
         
-        # Check double-tap tricks first
-        double_tap_tricks = []
-        regular_tricks = []
-        
-        for trick_name, config_data in config.FLIP_CONTROLS.items():
-            required_keys = config_data["keys"]
-            left_needs_double = required_keys[0][1]
-            right_needs_double = required_keys[1][1]
-            
-            if left_needs_double or right_needs_double:
-                double_tap_tricks.append((trick_name, config_data))
-            else:
-                regular_tricks.append((trick_name, config_data))
-        
-        # Check double-tap tricks first
-        for trick_name, config_data in double_tap_tricks:
+        for trick_name, config_data in FLIP_CONTROLS.items():
             required_keys = config_data["keys"]
             left_required = required_keys[0][0]
-            left_needs_double = required_keys[0][1]
             right_required = required_keys[1][0]
-            right_needs_double = required_keys[1][1]
             
             if left_key == left_required and right_key == right_required:
-                left_double_ok = not left_needs_double or (left_required in double_tapped_actions)
-                right_double_ok = not right_needs_double or (right_required in double_tapped_actions)
-                
-                if left_double_ok and right_double_ok:
-                    self.execute_trick(trick_name)
-                    return
-        
-        # Check regular tricks
-        for trick_name, config_data in regular_tricks:
-            required_keys = config_data["keys"]
-            left_required = required_keys[0][0]
-            left_needs_double = required_keys[0][1]
-            right_required = required_keys[1][0]
-            right_needs_double = required_keys[1][1]
-            
-            if left_key == left_required and right_key == right_required:
-                left_double_ok = not left_needs_double or (left_required in double_tapped_actions)
-                right_double_ok = not right_needs_double or (right_required in double_tapped_actions)
-                
-                if left_double_ok and right_double_ok:
-                    self.execute_trick(trick_name)
-                    return
+                self.execute_trick(trick_name)
+                return
     
     def handle_trick_combo_end(self, input_data):
         keys_held = input_data.get('keys_held', [["none", False], ["none", False]])
         
-        # Check for successful trick completion
         self.trick_manager.check_keys_released(keys_held)
         
         if keys_held[0][0] == "none" and keys_held[1][0] == "none":
-            # Check if trick was successful or failed
             if self.trick_manager.trick_completed:
-                # Trick was successful
                 self.last_trick_successful = True
                 
-                # UI already updated by trick manager
-                # Check if on rail - if so, stay airborne to allow grind input
                 if self.level and self.level.get_current_chunk_type() == 'rail':
-                    # Stay airborne - start grind window timer
                     self.grind_window_start = time.time()
                 else:
-                    # Not on rail - land normally
                     self.last_trick_successful = False
-                    
                     self.state_manager.end_trick()
                     self.display.stop_animation()
                     self.trick_manager.reset_trick()
-                    
-                    # Play landing sound using sound manager
                     if self.sound_manager:
                         self.sound_manager.play_land_sound()
             else:
-                # Trick failed - land immediately, no grinding allowed
                 self.last_trick_successful = False
                 
                 if self.ui and self.trick_manager.current_trick:
                     self.ui.show_trick_fail(self.trick_manager.current_trick)
                 
-                # Show red board feedback
                 self.display.show_board_color_feedback('red')
-            
                 self.state_manager.end_trick()
                 self.display.stop_animation()
                 self.trick_manager.reset_trick()
                 
-                # Play landing sound using sound manager
                 if self.sound_manager:
                     self.sound_manager.play_land_sound()
     
     def execute_trick(self, trick_name):
-        # Reset success flag for new trick
+        # Fixed: Prevent executing new trick if already performing one
+        if self.state_manager.is_player_airborne() or self.state_manager.is_player_grinding():
+            return
+        
         self.last_trick_successful = False
         
         self.state_manager.start_trick()
@@ -276,73 +220,50 @@ class Control:
         animation = self.animations[trick_name]
         self.display.start_animation(trick_name, animation, loop=True)
         
-        # Start tracking this trick
         self.trick_manager.start_trick(trick_name)
         
-        # Show trick start in UI
         if self.ui:
             self.ui.show_trick_start(trick_name)
 
-        # Play pop sound using sound manager
         if self.sound_manager:
             self.sound_manager.play_pop_sound()
         
-        
-        # Log trick execution
         if self.debug:
             self.debug.log_trick(trick_name)
     
     def handle_grind_combo(self, input_data):
-        """Handle grind trick combinations (simpler than flip tricks, no double-tap)."""
         keys_held = input_data.get('keys_held', [["none", False], ["none", False]])
-        double_tapped_actions = input_data.get('double_tapped_actions', set())
         
         left_key = keys_held[0][0] if keys_held[0][0] != "none" else "none"
         right_key = keys_held[1][0] if keys_held[1][0] != "none" else "none"
         
-        # Check grind controls (simpler format - just keys, no double-tap)
-        for grind_name, required_keys in config.GRIND_CONTROLS.items():
-            left_required = required_keys[0]
-            right_required = required_keys[1]
-            
-            if left_key == left_required and right_key == right_required:
+        for grind_name, required_keys in GRIND_CONTROLS.items():
+            if left_key == required_keys[0] and right_key == required_keys[1]:
                 self.execute_grind(grind_name)
                 return
     
     def handle_grind_exit(self, input_data):
-        """Handle exiting grind when keys are released."""
         keys_held = input_data.get('keys_held', [["none", False], ["none", False]])
         
-        # Exit grind when all keys released
         if keys_held[0][0] == "none" and keys_held[1][0] == "none":
-            # Force complete grind as successful if not already completed
             if self.trick_manager.current_trick and not self.trick_manager.trick_completed:
-                # Grinds always succeed with GOOD multiplier
                 self.trick_manager.complete_trick(1)
             
             self.last_trick_successful = False
-            
-            # Reset off-rail timer
             self.grind_off_rail_timer = None
             
             self.state_manager.end_grind()
             self.display.stop_animation()
             self.trick_manager.reset_trick()
             
-            # Stop rail sound and play landing sound
             if self.sound_manager:
                 self.sound_manager.stop_rail_sound()
                 self.sound_manager.play_land_sound()
     
     def execute_grind(self, grind_name):
-        """Execute a grind trick."""
-        # Reset grind window timer
         self.grind_window_start = None
-        
-        # Reset off-rail timer
         self.grind_off_rail_timer = None
         
-        # Start grinding state
         self.state_manager.start_grind()
 
         if grind_name not in self.animations:
@@ -351,33 +272,22 @@ class Control:
         animation = self.animations[grind_name]
         self.display.start_animation(grind_name, animation, loop=True)
         
-        # Start tracking this grind
         self.trick_manager.start_trick(grind_name)
         
-        # Show grind start in UI
         if self.ui:
             self.ui.show_trick_start(grind_name)
 
-        # Play rail sound in a loop
         if self.sound_manager:
             self.sound_manager.play_rail_sound()
         
-        # Log grind execution
         if self.debug:
             self.debug.log_trick(grind_name)
     
     def handle_menu_input(self, input_data):
-        """Handle input when in menu state."""
         action = input_data.get('action', '')
         
         if action == 'enter':
-            # Start the game
             self.state_manager.start_game()
-            # Show skateboard and trigger camera shake
             self.display.show_skateboard()
-            self.display.add_camera_shake(5.0, 0.5)  # Intensity 5, duration 0.5 seconds
-            print("Game started!")
         elif action == 'escape':
-            # Exit the game
-            import pygame
             pygame.event.post(pygame.event.Event(pygame.QUIT))
