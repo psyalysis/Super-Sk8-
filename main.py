@@ -20,13 +20,13 @@ class Main:
         
         try:
             pygame.init()
-            # Use display dimensions from config
+            
             width, height = config.DISPLAY_WIDTH, config.DISPLAY_HEIGHT
             self.screen = pygame.display.set_mode((width, height))
-            pygame.display.set_caption("Super-Sk8!")
+
+            pygame.display.set_caption("Super Sk8!")
             self.clock = pygame.time.Clock()
             
-            # Store actual screen dimensions
             self.screen_width = width
             self.screen_height = height
 
@@ -39,6 +39,7 @@ class Main:
             # Preload animation frames for better performance
             try:
                 self.resource_manager.preload_animation_frames(config.ANIMATIONS)
+                self.resource_manager.preload_animation_frames(config.GRIND_ANIMATIONS)
             except Exception as e:
                 print(f"Warning: Failed to preload animations: {e}")
             
@@ -51,10 +52,10 @@ class Main:
             # Initialize game modules
             self.display = display.Display(self.screen, self.resource_manager)
             self.debug = debug.Debug()
-            self.level = level.Level(self.display, self.resource_manager)
+            self.level = level.Level(self.display, self.resource_manager, self.state_manager)
             self.display.level = self.level  # Set level reference for camera shake
             self.ui = ui.UI(self.display)
-            self.control = control.Control(self.display, self.state_manager, self.input_handler, self.debug, self.ui, self.sound_manager)
+            self.control = control.Control(self.display, self.state_manager, self.input_handler, self.debug, self.ui, self.sound_manager, self.level)
             
         except Exception as e:
             print(f"Failed to initialize game: {e}")

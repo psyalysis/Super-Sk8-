@@ -7,6 +7,7 @@ class StateManager:
         self.in_menu = True
         self.player_rolling = True
         self.player_airborne = False
+        self.player_grinding = False
     
     def start_game(self):
         """Start the game."""
@@ -35,3 +36,17 @@ class StateManager:
     def is_player_airborne(self):
         """Check if player is airborne."""
         return self.player_airborne
+    
+    def start_grind(self):
+        """Start grinding."""
+        self.player_grinding = True
+        self.player_airborne = False
+    
+    def end_grind(self):
+        """End grinding."""
+        self.player_grinding = False
+        self.player_rolling = True
+    
+    def is_player_grinding(self):
+        """Check if player is grinding."""
+        return self.player_grinding

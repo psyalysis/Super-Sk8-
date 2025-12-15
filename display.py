@@ -36,8 +36,8 @@ class Display:
         self.frame_rate_limit = False
         self.max_frame_time = 1000 / 60
         
-        # Calculate skateboard position based on screen size
-        self.skateboard_base_position = (200, 150)
+        # Calculate skateboard position based on screen size and config offset
+        self.skateboard_base_position = (config.SKATEBOARD_OFFSET_X, config.SKATEBOARD_OFFSET_Y)
         
         # Pre-calculate animation positions for better performance
         self.trick_jump_height = 50
@@ -60,17 +60,17 @@ class Display:
         self.load_explode_sprite()
     
     def load_skateboard_sprite(self):
-        skateboard_path = "./animations/Default.png"
+        skateboard_path = "./assets/animations/Default.png"
         self.skateboard_sprite = self.resource_manager.load_texture(skateboard_path, config.CAMERA_ZOOM * 2)
         
         # Load colored versions
-        green_path = "./animations/DefaultGreen.png"
-        red_path = "./animations/DefaultRed.png"
+        green_path = "./assets/animations/DefaultGreen.png"
+        red_path = "./assets/animations/DefaultRed.png"
         self.skateboard_green_sprite = self.resource_manager.load_texture(green_path, config.CAMERA_ZOOM * 2)
         self.skateboard_red_sprite = self.resource_manager.load_texture(red_path, config.CAMERA_ZOOM * 2)
     
     def load_explode_sprite(self):
-        explode_path = "./animations/Explode.png"
+        explode_path = "./assets/animations/Explode.png"
         self.explode_sprite = self.resource_manager.load_texture(explode_path, config.CAMERA_ZOOM * 2)
 
     def clear_screen(self):
@@ -88,6 +88,11 @@ class Display:
     def draw_skateboard(self):
         # Get camera shake offset
         shake_x, shake_y = self.get_camera_shake_offset()
+        
+        # Check if on pad chunk for vertical adjustment
+        pad_height_offset = 0
+        if self.level and self.level.get_current_chunk_type() == 'pad':
+            pad_height_offset = -10  # Raise player by 10px
         
         if self.animation_running and self.current_animation and self.animation_frames:
             current_time = pygame.time.get_ticks()
@@ -108,21 +113,21 @@ class Display:
                         return
                 self.last_frame_time = current_time
             
-            # Apply camera shake to animation position
+            # Apply camera shake and pad offset to animation position
             current_sprite = self.animation_frames[self.animation_frame]
             shake_position = (
                 self.cached_trick_position[0] + shake_x,
-                self.cached_trick_position[1] + shake_y
+                self.cached_trick_position[1] + shake_y + pad_height_offset
             )
             self.screen.blit(current_sprite, shake_position)
         else:
             # Skateboard stays in fixed screen position (in front of scrolling level)
             # Choose sprite based on board color feedback
             sprite_to_use = self.get_board_sprite()
-            # Apply camera shake to base position
+            # Apply camera shake and pad offset to base position
             shake_position = (
                 self.skateboard_base_position[0] + shake_x,
-                self.skateboard_base_position[1] + shake_y
+                self.skateboard_base_position[1] + shake_y + pad_height_offset
             )
             self.screen.blit(sprite_to_use, shake_position)
     
@@ -132,10 +137,15 @@ class Display:
             # Get camera shake offset
             shake_x, shake_y = self.get_camera_shake_offset()
             
+            # Check if on pad chunk for vertical adjustment
+            pad_height_offset = 0
+            if self.level and self.level.get_current_chunk_type() == 'pad':
+                pad_height_offset = -10  # Raise player by 10px
+            
             # Position explode animation underneath the skateboard
             explode_position = (
                 self.skateboard_base_position[0] + shake_x, 
-                self.skateboard_base_position[1] + 30 + shake_y  # Offset below skateboard
+                self.skateboard_base_position[1] + 30 + shake_y + pad_height_offset  # Offset below skateboard
             )
             current_sprite = self.animation_frames[self.animation_frame]
             self.screen.blit(current_sprite, explode_position)
@@ -160,19 +170,14 @@ class Display:
     def set_trick_speed(self, trick_name):
         self.frame_duration = self.base_frame_duration
         
-        flip_tricks = ["Kickflip", "Heelflip"]
-        shuv_tricks = ["BS-Shuv", "FS-Shuv"]
-        double_shuv_tricks = ["Tre Flip", "Lazer Flip", "360 Hardflip", "360 Inward Heelflip"]
-        varial_tricks = ["Varial Kickflip", "Varial Heelflip", "Inward Heelflip", "Hardflip"]
-
-        if trick_name in flip_tricks:
-            self.frame_duration *= 1
-        elif trick_name in shuv_tricks:
-            self.frame_duration *= 1
-        elif trick_name in double_shuv_tricks:
-            self.frame_duration *= 1
-        elif trick_name in varial_tricks:
-            self.frame_duration *= 1
+        # Check if it's a flip trick or grind trick
+        if trick_name in config.FLIP_SPEEDS:
+            speed_multiplier = config.FLIP_SPEEDS.get(trick_name, 1.0)
+        else:
+            # Grind tricks use GRIND_SPEED
+            speed_multiplier = config.GRIND_SPEED
+        
+        self.frame_duration /= speed_multiplier
     
     def stop_animation(self):
         # Store current trick before clearing it

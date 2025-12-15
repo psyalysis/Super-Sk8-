@@ -141,12 +141,12 @@ class ResourceManager:
     def precalculate_common_scaled_textures(self):
         """Pre-calculate commonly used scaled textures."""
         common_textures = [
-            ("./animations/Default.png", config.CAMERA_ZOOM),
-            ("./objects/Tile1.png", config.CAMERA_ZOOM),
-            ("./objects/Tile2.png", config.CAMERA_ZOOM),
-            ("./objects/Tile3.png", config.CAMERA_ZOOM),
-            ("./objects/StairTile1.png", config.CAMERA_ZOOM),
-            ("./objects/StairTile2.png", config.CAMERA_ZOOM),
+            ("./assets/animations/Default.png", config.CAMERA_ZOOM),
+            ("./assets/level/Tile1.png", config.CAMERA_ZOOM),
+            ("./assets/level/Tile2.png", config.CAMERA_ZOOM),
+            ("./assets/level/Tile3.png", config.CAMERA_ZOOM),
+            ("./assets/level/StairTile1.png", config.CAMERA_ZOOM),
+            ("./assets/level/StairTile2.png", config.CAMERA_ZOOM),
         ]
         
         for path, scale_factor in common_textures:

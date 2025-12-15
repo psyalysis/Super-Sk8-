@@ -9,22 +9,30 @@ from typing import Optional, Dict
 
 class SoundManager:
     def __init__(self):
+        if not pygame.mixer.get_init():
+            pygame.mixer.init()
+            
+        # Dictionary to store all loaded sounds so we can access them by name
         self.sounds: Dict[str, pygame.mixer.Sound] = {}
         self.master_volume = config.MASTER_VOLUME
         
-        # Sound loading optimization
+        # Queue of sounds to load on startup
         self.preload_queue = []
         self.loading_in_progress = False
         
-        # Initialize mixer if not already done
-        if not pygame.mixer.get_init():
-            pygame.mixer.init()
+        # Seperate channel for rail sound so that we can stop it when we want independently of other sounds
+        self.rail_channel = None
         
         # Preload common sounds
         self.preload_common_sounds()
     
     def set_master_volume(self, volume: float):
-        """Set master volume (0.0 to 1.0)."""
+        """Set master volume (0.0 to 1.0).
+        Parameters:
+            volume: float - The new master volume (0.0 to 1.0)
+            
+        Updates all sound volumes based on the new master volume clamped between 0.0 and 1.0.
+        """
         self.master_volume = max(0.0, min(1.0, volume))
         self._update_all_volumes()
     
@@ -48,7 +56,8 @@ class SoundManager:
         """Play a loaded sound."""
         if name in self.sounds:
             try:
-                self.sounds[name].play()
+                channel = self.sounds[name].play()
+                channel.set_volume(self.master_volume)
                 return True
             except Exception as e:
                 print(f"Error playing sound {name}: {e}")
@@ -62,12 +71,12 @@ class SoundManager:
         
         # Try to load if not already loaded
         if sound_name not in self.sounds:
-            sound_path = f"{config.SOUND_PATHS.get(sound_prefix, 'SFX/')}{sound_num}.wav"
+            sound_path = f"{config.SOUND_PATHS.get(sound_prefix, 'assets/sfx/')}{sound_num}.wav"
             if os.path.exists(sound_path):
                 self.load_sound(sound_name, sound_path)
             else:
                 # Try .mp3 extension
-                sound_path = f"{config.SOUND_PATHS.get(sound_prefix, 'SFX/')}{sound_num}.mp3"
+                sound_path = f"{config.SOUND_PATHS.get(sound_prefix, 'assets/sfx/')}{sound_num}.mp3"
                 if os.path.exists(sound_path):
                     self.load_sound(sound_name, sound_path)
                 else:
@@ -87,7 +96,7 @@ class SoundManager:
     def play_success_sound(self) -> bool:
         """Play success sound."""
         if "success" not in self.sounds:
-            success_path = "SFX/Success.mp3"
+            success_path = "assets/sfx/Success.mp3"
             if os.path.exists(success_path):
                 self.load_sound("success", success_path)
             else:
@@ -98,7 +107,7 @@ class SoundManager:
     def play_fail_sound(self) -> bool:
         """Play fail sound."""
         if "fail" not in self.sounds:
-            fail_path = "SFX/Fail.mp3"
+            fail_path = "assets/sfx/Fail.mp3"
             if os.path.exists(fail_path):
                 self.load_sound("fail", fail_path)
             else:
@@ -106,11 +115,43 @@ class SoundManager:
                 return False
         return self.play_sound("fail")
     
+    def play_rail_sound(self) -> bool:
+        """Play rail grinding sound."""
+        if "rail" not in self.sounds:
+            rail_path = "assets/sfx/Rail.wav"
+            if os.path.exists(rail_path):
+                self.load_sound("rail", rail_path)
+            else:
+                print("Warning: Rail sound not found")
+                return False
+        
+        # Play rail sound in a loop
+        try:
+            # Stop existing rail sound if playing
+            if self.rail_channel is not None:
+                self.rail_channel.stop()
+            
+            self.rail_channel = self.sounds["rail"].play(-1)  # -1 means loop forever
+            self.rail_channel.set_volume(self.master_volume)
+            return True
+        except Exception as e:
+            print(f"Error playing rail sound: {e}")
+            return False
+    
+    def stop_rail_sound(self):
+        """Stop rail grinding sound."""
+        try:
+            if self.rail_channel is not None:
+                self.rail_channel.stop()
+                self.rail_channel = None
+        except Exception as e:
+            print(f"Error stopping rail sound: {e}")
+    
     def preload_common_sounds(self):
         """Preload commonly used sounds to prevent frame drops."""
         common_sounds = [
-            ("success", "SFX/Success.mp3"),
-            ("fail", "SFX/Fail.mp3"),
+            ("success", "assets/sfx/Success.mp3"),
+            ("fail", "assets/sfx/Fail.mp3"),
         ]
         
         for name, path in common_sounds:

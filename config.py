@@ -5,8 +5,8 @@ DEBUG_TEXT_VISIBLE = True
 DEBUG_PRINT_VISIBLE = False
 
 # --- Font settings ---
-FONT_PATH = "fonts/ari-w9500.ttf"
-FONT_BOLD_PATH = "fonts/ari-w9500-bold.ttf"
+FONT_PATH = "assets/ui/ari-w9500.ttf"
+FONT_BOLD_PATH = "assets/ui/ari-w9500-bold.ttf"
 FONT_SIZE_SMALL = 16
 FONT_SIZE_MEDIUM = 24
 FONT_SIZE_LARGE = 32
@@ -23,16 +23,20 @@ SUPPORTED_RESOLUTIONS = [
     (1920, 1080),  # 16:9
 ]
 
-DISPLAY_WIDTH = 900
-DISPLAY_HEIGHT = 675
+DISPLAY_WIDTH = 1100
+DISPLAY_HEIGHT = 750
 FPS = 60
 
 # --- Texture settings ---
-FLOOR_TEXTURES_PATH = "./objects/"
+FLOOR_TEXTURES_PATH = "./assets/level/"
 
 # --- Camera settings ---
 CAMERA_ZOOM = 1.25
-CAMERA_SPEED = 6
+CAMERA_SPEED = 8
+
+# --- Skateboard display settings ---
+SKATEBOARD_OFFSET_X = 150
+SKATEBOARD_OFFSET_Y = 165
 
 # --- Colors ---
 COLORS = {
@@ -49,13 +53,17 @@ COLORS = {
 }
 
 # --- Animation settings ---
-ANIMATIONS = "animations/"
+ANIMATIONS = "assets/animations/flip/"
 ANIMATION_FRAME_RATE = 30
+
+# --- Grind settings ---
+GRIND_ANIMATIONS = "assets/animations/grind/"
+GRIND_SPEED = 1.0
 
 # --- Sound settings ---
 SOUND_PATHS = {
-    "land": "SFX/land_",
-    "pop": "SFX/pop_"
+    "land": "assets/sfx/land_",
+    "pop": "assets/sfx/pop_"
 }
 SOUND_VOLUME = 0.1
 MASTER_VOLUME = 0.1
@@ -116,3 +124,49 @@ FLIP_CONTROLS = {
     }
 }
 
+FLIP_SPEEDS = {
+    "Kickflip": 1.5,
+    "Heelflip": 1.5,
+    "Varial Kickflip": 1.75,
+    "Varial Heelflip": 1.75,
+    "Hardflip": 1.85,
+    "Inward Heelflip": 1.85,
+    "BS-Shuv": 1.7,
+    "FS-Shuv": 1.7,
+    "360 Hardflip": 1.8,
+    "360 Inward Heelflip": 1.8,
+    "Tre Flip": 1.4,
+    "Lazer Flip": 1.4,
+}
+
+GRIND_CONTROLS = {
+    "50-50 Grind": ["left-left", "right-right"],
+
+    "5-0 Grind": ["left-left", "right-left"],
+    "Nose Grind": ["left-right", "right-right"],
+
+    "Overcrooked Grind": ["left-up", "right-right"],
+    "Crooked Grind": ["left-down", "right-right"],
+
+    "Losi Grind": ["left-up", "right-right"],
+    "Lazy Grind": ["left-down", "right-left"],
+
+    "Salad Grind": ["left-left", "right-up"],
+    "Suski Grind": ["left-left", "right-down"],
+
+    "Feeble Grind": ["left-right", "right-up"],
+    "Smith Grind": ["left-right", "right-down"],
+
+    "Noseslide": ["left-up", "right-up"],
+    "Tailslide": ["left-down", "right-down"],
+
+    "Boardslide": ["left-down", "right-up"],
+    "Lipslide": ["left-up", "right-down"],
+
+}
+# ["left-down", "right-left"]
+
+# ["left-right", "right-left"]
+
+
+# ["left-up", "right-left"]

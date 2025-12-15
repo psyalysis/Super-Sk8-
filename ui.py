@@ -7,9 +7,9 @@ import config
 class UI:
     def __init__(self, display):
         self.display = display
-        self.button = pygame.image.load("icons/ButtonEmpty.png")
-        self.play_icon = pygame.image.load("icons/play.png")
-        self.settings_icon = pygame.image.load("icons/question.png")
+        self.button = pygame.image.load("assets/ui/ButtonEmpty.png")
+        self.play_icon = pygame.image.load("assets/ui/play.png")
+        self.settings_icon = pygame.image.load("assets/ui/question.png")
         self.bob_frame = 0
         
         # Pre-scale UI elements for better performance
