@@ -1,56 +1,41 @@
-"""Centralized resource management with caching."""
+"""Resource management with caching."""
 
 import pygame
 import os
-from typing import Dict, Optional, Any
-import config
+
+# Hardcoded resource settings
+CAMERA_ZOOM = 1.25
 
 
 class ResourceManager:
     def __init__(self):
-        self.textures: Dict[str, pygame.Surface] = {}
-        self.sounds: Dict[str, pygame.mixer.Sound] = {}
-        self.fonts: Dict[str, pygame.font.Font] = {}
-        self.scaled_textures: Dict[str, pygame.Surface] = {}
-        
+        self.textures = {}  # Simplified: Consolidated scaled_textures into textures dict (single cache layer)
+        self.sounds = {}
+        self.fonts = {}
+        self.animation_frames_cache = {}
         pygame.mixer.init()
     
-    def load_texture(self, path: str, scale_factor: Optional[float] = None) -> Optional[pygame.Surface]:
-        if path in self.textures:
-            texture = self.textures[path]
-        else:
-            try:
-                texture = pygame.image.load(path)
-                self.textures[path] = texture
-            except pygame.error as e:
-                return None
+    def load_texture(self, path, scale_factor=None):
+        """Load a texture with optional scaling."""
+        cache_key = f"{path}_{scale_factor}" if scale_factor else path  # Simplified: Single cache key system instead of separate scaled_textures dict
         
-        if scale_factor and scale_factor != 1.0:
-            cache_key = f"{path}_{scale_factor}"
-            if cache_key in self.scaled_textures:
-                return self.scaled_textures[cache_key]
-            
-            original_size = texture.get_size()
-            new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
-            scaled_texture = pygame.transform.scale(texture, new_size)
-            self.scaled_textures[cache_key] = scaled_texture
-            return scaled_texture
-        
-        return texture
-    
-    def load_sound(self, path: str) -> Optional[pygame.mixer.Sound]:
-        if path in self.sounds:
-            return self.sounds[path]
+        if cache_key in self.textures:
+            return self.textures[cache_key]
         
         try:
-            sound = pygame.mixer.Sound(path)
-            sound.set_volume(config.SOUND_VOLUME)
-            self.sounds[path] = sound
-            return sound
-        except pygame.error as e:
+            texture = pygame.image.load(path)
+            if scale_factor and scale_factor != 1.0:
+                size = (int(texture.get_width() * scale_factor), 
+                       int(texture.get_height() * scale_factor))
+                texture = pygame.transform.scale(texture, size)
+            self.textures[cache_key] = texture
+            return texture
+        except Exception as e:  # Simplified: Single exception handler instead of separate pygame.error and generic Exception
+            print(f"Failed to load texture {path}: {e}")
             return None
     
-    def load_font(self, path: str, size: int) -> Optional[pygame.font.Font]:
+    def load_font(self, path, size):
+        """Load a font file."""
         cache_key = f"{path}_{size}"
         if cache_key in self.fonts:
             return self.fonts[cache_key]
@@ -59,67 +44,51 @@ class ResourceManager:
             font = pygame.font.Font(path, size)
             self.fonts[cache_key] = font
             return font
-        except pygame.error as e:
-            return None
+        except Exception:  # Simplified: Removed separate pygame.error handler and verbose error messages
+            return pygame.font.Font(None, size)
     
-    def preload_animations(self, animations_path: str) -> Dict[str, pygame.Surface]:
-        animations = {}
-        
+    def preload_animation_frames(self, animations_path):
+        """Pre-extract and cache all animation frames."""
         if not os.path.exists(animations_path):
-            return animations
+            return {}
         
         for filename in os.listdir(animations_path):
             if filename.endswith(".png"):
-                full_path = os.path.join(animations_path, filename)
                 trick_name = filename[:-4]
-                
-                texture = self.load_texture(full_path)
-                if texture:
-                    animations[trick_name] = texture
+                spritemap_path = os.path.join(animations_path, filename)
+                spritemap = self.load_texture(spritemap_path)
+                if spritemap:
+                    frames = self.extract_animation_frames(spritemap, CAMERA_ZOOM * 2)
+                    self.animation_frames_cache[trick_name] = frames
         
-        return animations
+        return self.animation_frames_cache
     
-    def preload_level_textures(self, textures_path: str, zoom_factor: float) -> Dict[str, pygame.Surface]:
-        textures = {}
+    def extract_animation_frames(self, spritemap, zoom_factor):
+        """Extract frames from spritemap with scaling."""
+        frames = []
+        spritemap_width, spritemap_height = spritemap.get_size()
+        frame_width = spritemap_height
+        frame_count = spritemap_width // frame_width
         
-        if not os.path.exists(textures_path):
-            return textures
+        scaled_width = int(frame_width * zoom_factor)
+        scaled_height = int(spritemap_height * zoom_factor)
         
-        texture_files = ["Tile1.png", "Tile2.png", "Tile3.png", "StairTile1.png", "StairTile2.png"]
+        for i in range(frame_count):
+            frame_x = i * frame_width
+            frame_surface = pygame.Surface((frame_width, spritemap_height), pygame.SRCALPHA)
+            frame_surface.blit(spritemap, (0, 0), (frame_x, 0, frame_width, spritemap_height))
+            scaled_frame = pygame.transform.scale(frame_surface, (scaled_width, scaled_height))
+            frames.append(scaled_frame)
         
-        for filename in texture_files:
-            full_path = os.path.join(textures_path, filename)
-            if os.path.exists(full_path):
-                texture_name = filename[:-4]
-                texture = self.load_texture(full_path, zoom_factor)
-                if texture:
-                    textures[texture_name] = texture
-        
-        return textures
+        return frames
     
-    def get_texture(self, path: str, scale_factor: Optional[float] = None) -> Optional[pygame.Surface]:
-        if scale_factor and scale_factor != 1.0:
-            cache_key = f"{path}_{scale_factor}"
-            return self.scaled_textures.get(cache_key)
-        return self.textures.get(path)
-    
-    def get_sound(self, path: str) -> Optional[pygame.mixer.Sound]:
-        return self.sounds.get(path)
-    
-    def get_font(self, path: str, size: int) -> Optional[pygame.font.Font]:
-        cache_key = f"{path}_{size}"
-        return self.fonts.get(cache_key)
+    def get_animation_frames(self, trick_name):
+        """Get cached animation frames for a trick."""
+        return self.animation_frames_cache.get(trick_name, [])
     
     def cleanup(self):
-        self.textures.clear()
+        """Clean up resources."""
+        self.textures.clear()  # Removed: precalculate_common_scaled_textures() method (unnecessary pre-calculation)
         self.sounds.clear()
         self.fonts.clear()
-        self.scaled_textures.clear()
-    
-    def get_memory_usage(self) -> Dict[str, int]:
-        return {
-            'textures': len(self.textures),
-            'scaled_textures': len(self.scaled_textures),
-            'sounds': len(self.sounds),
-            'fonts': len(self.fonts)
-        }
+        self.animation_frames_cache.clear()
