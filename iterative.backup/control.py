@@ -1,7 +1,6 @@
-"""Handles keyboard controls for the system."""
+""" Handles keyboard controls for the system. """
 import pygame
 from enum import Enum, auto
-
 
 class Direction(Enum):
     UP = auto()
@@ -20,40 +19,36 @@ KEY_MAP = {
     pygame.K_l: ('right', Direction.RIGHT),
 }
 
-TRICK_MAP = {
-    "Kickflip": {"left": "LEFT", "right": "DOWN"},
-    "Heelflip": {"left": "LEFT", "right": "UP"}
-}
-
-
 class Control:
     def __init__(self):
         self.keys_held = {"left": None, "right": None}
         self.pressed_keys = {"left": [], "right": []}
-
+    
     def handle_keydown(self, key):
+        print(f"Key down: {key}")
+        
         if key in KEY_MAP:
             hand, direction = KEY_MAP[key]
-
+            # Add to end if not already in list
             if key not in self.pressed_keys[hand]:
                 self.pressed_keys[hand].append(key)
             self.keys_held[hand] = direction.name
-
+            print(f"Keys held: {self.keys_held}")
+    
     def handle_keyup(self, key):
+        print(f"Key up: {key}")
+        
         if key in KEY_MAP:
             hand, direction = KEY_MAP[key]
-
             if key in self.pressed_keys[hand]:
                 self.pressed_keys[hand].remove(key)
-
+            
+            # Fallback to next still held key 
             if self.pressed_keys[hand]:
                 last_key = self.pressed_keys[hand][-1]
                 _, new_direction = KEY_MAP[last_key]
                 self.keys_held[hand] = new_direction.name
-
             else:
                 self.keys_held[hand] = None
-
-    def check_trick_input(self):
-        """Check if current input matches any trick pattern."""
-        return next((trick for trick, pattern in TRICK_MAP.items() if self.keys_held == pattern), None)
+            
+            print(f"Keys held: {self.keys_held}")
