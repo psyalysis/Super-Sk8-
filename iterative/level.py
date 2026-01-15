@@ -12,23 +12,33 @@ class Level:
             self.floor_image = pygame.image.load("./assets/level/floorChunk.png").convert_alpha()
         except pygame.error:
             print("Warning: Could not find floorChunk.png. Ensure you are running from the correct directory")
+        try:
+            self.rail_image = pygame.image.load("./assets/level/railBlend.png").convert_alpha()
+        except pygame.error:
+            print("Warning: Could not find railBlend.png. Ensure you are running from the correct directory")
 
         # 2. Level Properties
         self.chunks = []
-        self.scroll_speed = 300  
+        self.rail_chunks = []
+        self.scroll_speed = 291  
         self.chunk_width = 291 # Match your texture width
+
+        # spacing adjustments: reduce horizontal gap by 40 px and vertical gap by 20 px
+        self.spacing_x = self.chunk_width - 41
+        self.spacing_y = (self.spacing_x / 2)
+        self.base_y = 100
         
         # Initialize chunks
         for i in range(5):
-            self.chunks.append(self._generate_chunk(i * self.chunk_width))
+            x = i * self.spacing_x
+            y = self.base_y + i * self.spacing_y
+            self.chunks.append(self._generate_chunk(x, y))
 
-    def _generate_chunk(self, x):
+    def _generate_chunk(self, x, y):
         """Creates a data structure for each floor segment."""
-        # Isometric Y calculation to keep the path tilted
-        y = (x // 2) + 300 
         return {
             "pos": pygame.Vector2(x, y),
-            "type": random.choice([None, "rail", None])
+            "type": random.choice([None, "rail", None, None])
         }
 
     def update(self, dt):
@@ -41,12 +51,20 @@ class Level:
         # Recycle logic: If chunk is completely off screen, move to end
         if self.chunks[0]["pos"].x < -self.chunk_width:
             last_chunk_x = self.chunks[-1]["pos"].x
+            last_chunk_y = self.chunks[-1]["pos"].y
             self.chunks.pop(0)
-            self.chunks.append(self._generate_chunk(last_chunk_x + self.chunk_width))
+            
+            if chunk["type"] == "rail":
+                self.rail_chunks.pop(0)
+                
+                
+            new_x = last_chunk_x + self.spacing_x
+            new_y = last_chunk_y + self.spacing_y
+            self.chunks.append(self._generate_chunk(new_x, new_y))
 
     def get_current_chunk_type(self):
         """Check what is under the player (assumed X position 150)."""
-        player_x = 150
+        player_x = 0
         for chunk in self.chunks:
             if chunk["pos"].x <= player_x <= chunk["pos"].x + self.chunk_width:
                 return chunk["type"]
@@ -55,11 +73,15 @@ class Level:
     def draw(self):
         """Draw the actual images to the screen."""
         for chunk in self.chunks:
+            if chunk["type"] == "rail":
+                self.rail_chunks.append(chunk)
+                
             self.screen.blit(self.floor_image, (chunk["pos"].x, chunk["pos"].y))
             
-            # Debug: Draw a red line if it's a rail chunk
-            if chunk["type"] == "rail":
-                # Offset the line so it looks like it's 'on' the isometric chunk
-                start = (chunk["pos"].x + 50, chunk["pos"].y + 25)
-                end = (chunk["pos"].x + 250, chunk["pos"].y + 125)
-                pygame.draw.line(self.screen, (255, 0, 0), start, end, 5)
+        for rail_chunk in self.rail_chunks:
+            
+            if rail_chunk["pos"].x > -self.chunk_width: #Render the ones still on screen
+                start = (rail_chunk["pos"].x + 50, rail_chunk["pos"].y + 25)
+                end = (rail_chunk["pos"].x + 250, rail_chunk["pos"].y + 125)
+                self.screen.blit(self.rail_image, (start, end))
+                
