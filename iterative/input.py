@@ -32,6 +32,10 @@ class Input:
     def get_active_trick(self):
         """Matches the call in Main._update()."""
         return self.check_trick_input()
+    
+    def get_active_grind(self):
+        """Check for active grind input."""
+        return self.check_grind_input()
 
     def handle_input(self, event):
         """Bridge the gap between Main's event loop and internal logic."""
@@ -46,7 +50,7 @@ class Input:
 
             if key not in self.pressed_keys[hand]:
                 self.pressed_keys[hand].append(key)
-            self.keys_held[hand] = direction
+            self.keys_held[hand] = direction.name
 
     def handle_keyup(self, key):
         if key in KEY_MAP:
@@ -66,3 +70,7 @@ class Input:
     def check_trick_input(self):
         """Check if current input matches any trick pattern."""
         return next((trick for trick, pattern in config.TRICK_MAP.items() if self.keys_held == pattern), None)
+
+    def check_grind_input(self):
+        """Check if current input matches any grind pattern."""
+        return next((grind for grind, pattern in config.GRIND_MAP.items() if self.keys_held == pattern), None)
